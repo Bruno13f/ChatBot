@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card"
 
 export function GroupInfoCard() {
   return (
-    <Card className="w-full h-full pb-16 md:pt-10">
+    <Card className="w-full h-full pb-16 md:pt-10 bg-background">
     </Card>
   );
 }

@@ -59,11 +59,10 @@ export function Navbar({showLogout}: NavbarProps) {
         h-full lg:h-auto lg:mt-10
       ">
         <span
-          className="text-2xl font-bold tracking-widest text-foreground select-none"
+          className="text-3xl font-semibold tracking-widest text-foreground select-none"
           style={{
             writingMode: "vertical-rl",
             textOrientation: "mixed",
-            letterSpacing: "0.2em",
           }}
           title="ChatBot"
         >
