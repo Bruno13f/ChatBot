@@ -1,0 +1,68 @@
+services:
+  frontend:
+    container_name: frontend
+    build:
+      context: ./frontend
+    ports:
+      - "${FRONTEND_PORT}:${FRONTEND_PORT}"
+    networks:
+      - my-network
+    depends_on:
+      - backend
+    env_file:
+      - .env
+    environment:
+      - NEXT_PUBLIC_BACKEND_URI=http://backend:${BACKEND_PORT}/api
+      - NEXT_PUBLIC_SOCKET_WEATHER_URI=http://sockets-weather:${SOCKET_WEATHER_PORT}
+      - NEXT_PUBLIC_SOCKET_JOKES_URI=http://sockets-jokes:${SOCKET_JOKES_PORT}
+  
+  backend:
+    container_name: backend
+    build:
+      context: ./backend
+    ports:
+      - "${BACKEND_PORT}:${BACKEND_PORT}"
+    networks:
+      - my-network
+    env_file:
+      - .env
+    environment:
+      - FRONTEND_URI=http://frontend:${FRONTEND_PORT}
+      - SOCKETS_JOKES_URI=http://sockets-jokes:${SOCKET_JOKES_PORT}
+      - SOCKETS_WEATHER_URI=http://sockets-weather:${SOCKET_WEATHER_PORT}
+  
+  sockets-jokes:
+    container_name: sockets-jokes
+    build:
+      context: ./sockets-jokes
+    ports:
+      - "${SOCKET_JOKES_PORT}:${SOCKET_JOKES_PORT}"
+    networks:
+      - my-network
+    depends_on:
+      - backend
+      - frontend
+    env_file:
+      - .env
+    environment:
+      - BACKEND_URI=http://backend:${BACKEND_PORT}/api
+  
+  sockets-weather:
+    container_name: sockets-weather
+    build:
+      context: ./sockets-weather
+    ports:
+      - "${SOCKET_WEATHER_PORT}:${SOCKET_WEATHER_PORT}"
+    networks:
+      - my-network
+    depends_on:
+      - backend
+      - frontend
+    env_file:
+      - .env
+    environment:
+      - BACKEND_URI=http://backend:${BACKEND_PORT}/api
+  
+networks:
+  my-network:
+    driver: bridge
