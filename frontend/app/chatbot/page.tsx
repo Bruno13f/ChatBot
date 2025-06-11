@@ -25,7 +25,7 @@ export default function ChatbotPage() {
     
       const validateToken = async () => {
         try {
-          const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URI}/validate-token`, {
+          const res = await fetch(`/api/validate-token`, {
             method: "POST",
             headers: {
               'Content-Type': 'application/json',

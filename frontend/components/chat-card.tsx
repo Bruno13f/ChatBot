@@ -36,7 +36,7 @@ export function ChatCard({userId}: ChatCardProps) {
           throw new Error("No token found");
         }
 
-        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URI}/messages/${userId}`, {
+        const response = await fetch(`/api/messages/${userId}`, {
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
@@ -225,7 +225,7 @@ export function ChatCard({userId}: ChatCardProps) {
     }
   
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URI}/messages`, {
+      const response = await fetch(`/api/messages`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
