@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/tabs"
 import { GroupsCard } from "@/components/groups-card"
 import { GroupInfoCard } from "@/components/group-info-card"
+import { CardWidget } from "./card-widget"
 
 interface MainCardProps {
   userId: string
@@ -21,7 +22,7 @@ export function MainCard({userId}: MainCardProps) {
   return (
     <div className="flex flex-col md:flex-row items-stretch justify-center w-full h-full gap-x-5 gap-y-5 relative">
       {/* GroupsCard: pass setShowInfoPanel to Info button */}
-      <div className="w-full md:w-2/6 lg:w-1/6 flex items-center justify-center">
+      <div className="w-full md:w-2/6 lg:w-1/6 flex items-center justify-center px-4 mb:px-0 lg:px-0">
         <GroupsCard onInfoClick={() => setShowInfoPanel(true)} />
       </div>
       {/* Tabs */}
@@ -53,16 +54,9 @@ export function MainCard({userId}: MainCardProps) {
       </div>
       {/* Overlay for sm/md */}
       {showInfoPanel && (
-        <div className="fixed inset-0 z-50 flex justify-center items-center bg-black/70 lg:hidden">
-          <div className="w-5/6 max-w-xs h-[80%] bg-background shadow-xl p-4 relative rounded-2xl border border-border">
-            <button
-              className="absolute top-2 right-4 text-xl cursor-pointer"
-              onClick={() => setShowInfoPanel(false)}
-              aria-label="Close"
-            >✕</button>
-            <GroupInfoCard />
-          </div>
-        </div>
+        <CardWidget onClose={() => setShowInfoPanel(false)}>
+          <GroupInfoCard />
+        </CardWidget>
       )}
     </div>
   );

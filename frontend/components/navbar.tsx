@@ -2,7 +2,7 @@
 
 import { ThemeToggle } from "@/components/theme-toggle"
 import { Button } from "@/components/ui/button"
-import { LogOut, Bot } from "lucide-react"
+import { LogOut, User } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { toast } from "react-hot-toast"
 import {
@@ -17,6 +17,8 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { useState } from "react"
+import { CardWidget } from "@/components/card-widget"
+import { EditProfile } from "@/components/edit-profile"
 
 interface NavbarProps {
   showLogout: boolean
@@ -25,6 +27,7 @@ interface NavbarProps {
 export function Navbar({showLogout}: NavbarProps) {
   const router = useRouter()
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [isProfileOpen, setIsProfileOpen] = useState(false)
 
   const handleLogout = async () => {
     localStorage.removeItem("token")
@@ -79,6 +82,21 @@ export function Navbar({showLogout}: NavbarProps) {
         <span title="Toggle Theme" className="lg:mt-30">
           <ThemeToggle />
         </span>
+        <Button
+          variant="ghost"
+          size="icon"
+          title="User Profile"
+          onClick={() => setIsProfileOpen(true)}
+          className="cursor-pointer"
+        >
+          <User className="w-6 h-6" />
+        </Button>
+        {isProfileOpen && (
+            <CardWidget onClose={() => setIsProfileOpen(false)}>
+              <EditProfile/>
+            </CardWidget>
+          )
+        }
         {showLogout && (
           <AlertDialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <AlertDialogTrigger asChild>
@@ -87,6 +105,7 @@ export function Navbar({showLogout}: NavbarProps) {
                 size="icon"
                 onClick={() => setIsDialogOpen(true)}
                 title="Logout"
+                className="cursor-pointer"
               >
                 <LogOut className="w-6 h-6" />
               </Button>
