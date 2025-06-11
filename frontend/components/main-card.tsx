@@ -28,13 +28,13 @@ interface MainCardProps {
 
 export function MainCard({userId}: MainCardProps) {
   return (
-    <div className="flex flex-row items-stretch justify-center w-full h-full gap-x-5">
-      {/* 20% width */}
-      <div className="w-1/5 flex items-center justify-center">
+    <div className="flex flex-col md:flex-row items-stretch justify-center w-full h-full gap-x-5 gap-y-5">
+      {/* GroupsCard: at the top on small/medium, left on large */}
+      <div className="w-full md:w-2/6 lg:w-1/6 flex items-center justify-center">
         <GroupsCard/>
       </div>
-      {/* 60% width */}
-      <div className="w-3/5 flex items-center justify-center">
+      {/* Tabs: always visible, full width on small/medium screens */}
+      <div className="w-full md:w-4/6 lg:w-3/5 flex items-center justify-center">
         <Tabs defaultValue="chat" className="w-full pb-16 md:pt-10">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="chat">ChatBot</TabsTrigger>
@@ -48,8 +48,8 @@ export function MainCard({userId}: MainCardProps) {
           </TabsContent>
         </Tabs>
       </div>
-      {/* 20% width */}
-      <div className="w-1/5 flex items-center justify-center">
+      {/* GroupInfoCard: only visible on large screens */}
+      <div className="hidden lg:flex w-1/6 items-center justify-center">
         <GroupInfoCard/>
       </div>
     </div>
