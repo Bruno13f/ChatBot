@@ -17,10 +17,10 @@ function useResponsiveAvatarMax() {
     function handleResize() {
       if (window.innerWidth < 1030) {
         setMax(3);
-      }  else if (window.innerWidth < 1500) {
-        setMax(2);
+      }  else if (window.innerWidth < 1400) {
+        setMax(1);
       } else {
-        setMax(3);
+        setMax(2);
       }
     }
     handleResize();

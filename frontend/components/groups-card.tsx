@@ -1,6 +1,6 @@
 import * as React from "react"
 
-import { GroupCard } from "./group-card"
+import { GroupCard } from "@/components/group-card"
 import { Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
@@ -9,8 +9,8 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 
 export function GroupsCard() {
   return (
-    <Card className="w-full h-full bg-background flex flex-col border-0">
-      <div className="flex flex-col gap-y-8">
+    <Card className="w-full h-full bg-background flex flex-col border-0 shadow-none">
+      <div className="flex flex-col gap-y-6">
         <h1 className="text-xl font-regular">Groups (20)</h1>
         <div className="flex flex-col items-center justify-between gap-y-8">
           <Input type="text" placeholder="Search for groups..." />
