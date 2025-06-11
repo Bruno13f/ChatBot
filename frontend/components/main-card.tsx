@@ -16,15 +16,17 @@ interface MainCardProps {
 }
 
 export function MainCard({userId}: MainCardProps) {
+  const [showInfoPanel, setShowInfoPanel] = React.useState(false);
+
   return (
-    <div className="flex flex-col md:flex-row items-stretch justify-center w-full h-full gap-x-5 gap-y-5">
-      {/* GroupsCard: at the top on small/medium, left on large */}
+    <div className="flex flex-col md:flex-row items-stretch justify-center w-full h-full gap-x-5 gap-y-5 relative">
+      {/* GroupsCard: pass setShowInfoPanel to Info button */}
       <div className="w-full md:w-2/6 lg:w-1/6 flex items-center justify-center">
-        <GroupsCard/>
+        <GroupsCard onInfoClick={() => setShowInfoPanel(true)} />
       </div>
-      {/* Tabs: always visible, full width on small/medium screens */}
+      {/* Tabs */}
       <div className="w-full md:w-4/6 lg:w-3/5 flex items-center justify-center">
-        <Tabs defaultValue="chat" className="w-full md:pt-10">
+        <Tabs defaultValue="chat" className="w-full pb-10 px-4 md:pt-10 md:pb-0 mb:px-0 lg:pb-0 lg:px-0">
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="chat">ChatBot</TabsTrigger>
             <TabsTrigger value="openai">OpenAI</TabsTrigger>
@@ -49,6 +51,19 @@ export function MainCard({userId}: MainCardProps) {
       <div className="hidden lg:flex w-1/6 items-center justify-center">
         <GroupInfoCard/>
       </div>
+      {/* Overlay for sm/md */}
+      {showInfoPanel && (
+        <div className="fixed inset-0 z-50 flex justify-center items-center bg-black/70 lg:hidden">
+          <div className="w-5/6 max-w-xs h-[80%] bg-background shadow-xl p-4 relative rounded-2xl border border-border">
+            <button
+              className="absolute top-2 right-4 text-xl cursor-pointer"
+              onClick={() => setShowInfoPanel(false)}
+              aria-label="Close"
+            >✕</button>
+            <GroupInfoCard />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

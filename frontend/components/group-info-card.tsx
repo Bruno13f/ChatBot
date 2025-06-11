@@ -36,10 +36,10 @@ export function GroupInfoCard() {
         <h1 className="text-[1rem] font-regular mt-4">Acabar cu curso</h1>
         <h2 className="text-sm font-regular text-muted-foreground">5 members</h2>
         <div className="flex flex-row gap-2 mt-4">
-          <Button variant="outline"><Pencil/>Edit</Button>
-          <Button variant="outline"><Trash2/>Delete</Button>
+          <Button variant="outline" className="cursor-pointer"><Pencil/>Edit</Button>
+          <Button variant="outline" className="cursor-pointer"><Trash2/>Delete</Button>
         </div>
-        <div className="flex flex-row justify-between items-center w-full mt-10"> 
+        <div className="flex flex-row justify-between items-center w-full mt-10 cursor-pointer"> 
           <h2 className="text-sm font-regular text-muted-foreground">Invite more people</h2>
           <UserPlus className="text-muted-foreground size-5"/>
         </div>

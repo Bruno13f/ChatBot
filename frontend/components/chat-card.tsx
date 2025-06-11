@@ -280,7 +280,7 @@ export function ChatCard({userId}: ChatCardProps) {
         <div className="grid w-full gap-2">
           <Textarea className="resize-none w-full" text={message} setText={setMessage} onEnterPress={sendMessage} />
           <div className="flex justify-center">
-            <Button onClick={sendMessage} className="w-30" disabled={loading}>
+            <Button onClick={sendMessage} className="w-30 cursor-pointer" disabled={loading}>
               {loading ? <Loader2 className="animate-spin text-gray-500 w-6 h-6" /> : "Send Message"}
             </Button>
           </div>

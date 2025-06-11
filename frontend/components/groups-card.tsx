@@ -1,13 +1,13 @@
 import * as React from "react"
 
 import { GroupCard } from "@/components/group-card"
-import { Plus } from "lucide-react"
+import { Plus, Info } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 
-export function GroupsCard() {
+export function GroupsCard({ onInfoClick }: { onInfoClick?: () => void }) {
   return (
     <Card className="w-full h-full bg-background flex flex-col border-0 shadow-none">
       <div className="flex flex-col gap-y-6">
@@ -16,9 +16,18 @@ export function GroupsCard() {
           <Input type="text" placeholder="Search for groups..." />
           <div className="flex flex-row items-center justify-between w-full px-2">
             <span className="text-xs">ALL GROUPS</span>
-            <Button size="icon" className="size-6">
-              <Plus />
-            </Button>
+            <div className="flex flex-row justify-end gap-x-2">
+              <Button size="icon" className="size-6 cursor-pointer">
+                <Plus strokeWidth={"3"}/>
+              </Button>
+              <Button
+                size="icon"
+                className="size-6 lg:hidden cursor-pointer"
+                onClick={onInfoClick}
+              >
+                <Info strokeWidth={"3"} />
+              </Button>
+            </div>
           </div>
         </div>
         <div className="flex flex-col items-center justify-center w-full h-full">

@@ -46,6 +46,7 @@ export function Navbar({showLogout}: NavbarProps) {
     <nav className="
       fixed
       w-full h-16 flex-row top-0 left-0
+      bg-background/60
       border-b border-dashed bg-foreground-primary z-50
       flex items-center justify-between px-4 py-2
       sm:flex-row sm:w-full sm:h-16 sm:top-0 sm:left-0 sm:border-b sm:border-r-0

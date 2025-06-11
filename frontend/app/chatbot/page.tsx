@@ -59,7 +59,7 @@ export default function ChatbotPage() {
   return (
     <main className="min-h-screen flex flex-col">
       <Navbar showLogout={true} />
-      <section className="flex-1 flex flex-col justify-center items-center text-center gap-8 pl-4 mt-12 sm:ml-0 md:mt-18 md:ml-0 lg:mt-0 lg:ml-10">
+      <section className="flex-1 flex flex-col justify-center items-center text-center gap-8 sm:p-4 md:pl-4 mt-12 sm:ml-0 md:mt-18 md:ml-0 lg:mt-0 lg:ml-10">
         <MainCard userId={userId || ""} />
       </section>
     </main>
