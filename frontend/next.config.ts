@@ -13,11 +13,11 @@ const nextConfig = {
         destination: `${process.env.NEXT_PUBLIC_BACKEND_URI}/:path*`, // Proxy to Backend API
       },
       {
-        source: "/socket-jokes/socket.io/:path*",
+        source: "/socket-jokes/:path*",
         destination: `${process.env.NEXT_PUBLIC_SOCKET_JOKES_URI}/:path*`, // Proxy to WebSocket API
       },
       {
-        source: "/socket-weather/socket.io/:path*",
+        source: "/socket-weather/:path*",
         destination: `${process.env.NEXT_PUBLIC_SOCKET_WEATHER_URI}/:path*`, // Proxy to WebSocket API
       },
     ];
@@ -26,11 +26,9 @@ const nextConfig = {
     NEXT_PUBLIC_BACKEND_URI:
       process.env.NEXT_PUBLIC_BACKEND_URI || "http://localhost:4000/api",
     NEXT_PUBLIC_SOCKET_WEATHER_URI:
-      process.env.NEXT_PUBLIC_SOCKET_WEATHER_URI ||
-      "http://localhost:4000/socket-io",
+      process.env.NEXT_PUBLIC_SOCKET_WEATHER_URI || "http://localhost:4000/",
     NEXT_PUBLIC_SOCKET_JOKES_URI:
-      process.env.NEXT_PUBLIC_SOCKET_JOKES_URI ||
-      "http://localhost:4001/socket-io",
+      process.env.NEXT_PUBLIC_SOCKET_JOKES_URI || "http://localhost:4001/",
   },
   eslint: {
     ignoreDuringBuilds: true, // Ignore ESLint errors during build

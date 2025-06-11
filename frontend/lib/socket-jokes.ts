@@ -12,7 +12,7 @@ export const getJokeSocket = (): Socket => {
     );
 
     socketInstance = io("/", {
-      path: "/socket-jokes/socket.io",
+      path: "/socket-jokes",
       reconnectionDelayMax: 10000,
       withCredentials: true,
     });

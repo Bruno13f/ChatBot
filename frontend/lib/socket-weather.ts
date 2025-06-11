@@ -12,7 +12,7 @@ export const getWeatherSocket = (): Socket => {
       process.env.NEXT_PUBLIC_SOCKET_WEATHER_URI
     );
     socketInstance = io("/", {
-      path: "/socket-weather/socket.io",
+      path: "/socket-weather",
       reconnectionDelayMax: 10000,
       withCredentials: true,
     });
