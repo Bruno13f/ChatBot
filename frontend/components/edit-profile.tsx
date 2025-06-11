@@ -29,8 +29,8 @@ export function EditProfile() {
             <Label htmlFor="email">Email</Label>
             <Input id="email" type="email" defaultValue="email@email.com" />
         </div>
-        <div className="flex flex-row items-center justify-center gap-4 mt-4">
-            <Button className="cursor-pointer" >Save Changes</Button>
+        <div className="flex flex-row items-center justify-center mt-4 pb-2">
+            <Button className="cursor-pointer">Save Changes</Button>
         </div>
     </div>
     );

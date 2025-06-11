@@ -6,8 +6,13 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { CardWidget } from "@/components/card-widget"
+import { GroupActions } from "@/components/group-actions"
 
 export function GroupsCard({ onInfoClick }: { onInfoClick?: () => void }) {
+  
+  let [showCreateGroup, setShowCreateGroup] = React.useState(false);
+  
   return (
     <Card className="w-full h-full bg-background flex flex-col border-0 shadow-none">
       <div className="flex flex-col gap-y-6">
@@ -17,9 +22,16 @@ export function GroupsCard({ onInfoClick }: { onInfoClick?: () => void }) {
           <div className="flex flex-row items-center justify-between w-full px-2">
             <span className="text-xs">ALL GROUPS</span>
             <div className="flex flex-row justify-end gap-x-2">
-              <Button size="icon" className="size-6 cursor-pointer">
+              <Button size="icon" className="size-6 cursor-pointer" 
+                onClick={() => setShowCreateGroup(true)}>
                 <Plus strokeWidth={"3"}/>
               </Button>
+              {showCreateGroup && (
+                  <CardWidget onClose={() => setShowCreateGroup(false)}>
+                    <GroupActions isCreate={true}/>
+                  </CardWidget>
+                )
+              }
               <Button
                 size="icon"
                 className="size-6 lg:hidden cursor-pointer"
