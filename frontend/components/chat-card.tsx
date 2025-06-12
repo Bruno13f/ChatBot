@@ -248,7 +248,7 @@ export function ChatCard({userId}: ChatCardProps) {
   
 
   return (
-    <Card className="flex-1 p-4 flex flex-col h-[450px]">
+    <Card className="flex-1 p-4 flex flex-col h-100 md:h-170 lg:h-180">
       <CardContent className="flex-1 flex flex-col items-center relative w-full">
         <div className={`absolute top-0 left-0 right-0 h-[320px] w-full overflow-y-auto px-4 flex justify-center ${fetching ? "items-center" : "items-start"}`}>
           {fetching ? (

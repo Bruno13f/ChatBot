@@ -56,15 +56,15 @@ export function JokesCard({userId}: JokesCardProps) {
   }, []);
 
   return (
-    <Card className="flex-1 p-4 flex flex-col h-[450px]">
+    <Card className="flex-1 p-4 flex flex-col h-100 md:h-170 lg:h-180">
       <CardContent className="flex-1">
         <H3>History of Jokes</H3>
         {fetching ? (
-        <div className="flex justify-center items-center h-[240px]">
+        <div className="flex justify-center items-center h-50 md:h-85 lg:h-90">
           <Loader2 className="animate-spin text-gray-500 w-6 h-6" />
         </div>
       ) : jokes.length === 0 && !fetching ? (
-        <div className="flex justify-center items-center h-[240px]">
+        <div className="flex justify-center items-center h-50 md:h-85 lg:h-90">
           <span className="text-xl text-gray-500">No jokes available</span>
         </div>
       ) : (

@@ -22,8 +22,10 @@ export function SignUpForm({
 }: React.ComponentPropsWithoutRef<"div">) {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
   const [errorEmail, setErrorEmail] = useState<string | null>(null)
   const [errorPassword, setErrorPassword] = useState<string | null>(null)
+  const [errorConfirmPassword, setErrorConfirmPassword] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const router = useRouter()
 
@@ -45,6 +47,17 @@ export function SignUpForm({
     // Password validation (check length)
     if (!password || password.length < 3) {
       setErrorPassword("Password must be at least 3 characters long.")
+      setLoading(false)
+      return
+    }
+
+    if (!confirmPassword || confirmPassword.length < 3 ) {
+      setErrorConfirmPassword("Password must be at least 3 characters long.")
+      setLoading(false)
+      return
+    }else if (confirmPassword != password) {
+      setErrorConfirmPassword("Passwords must match")
+      setErrorPassword("Passwords must match")
       setLoading(false)
       return
     }
@@ -144,6 +157,10 @@ export function SignUpForm({
     if (errorPassword) setErrorPassword(null) // Only reset error if the password has an error
   }
 
+  const handleConfirmPassword = () => {
+    if (errorConfirmPassword) setErrorConfirmPassword(null) // Only reset error if the password has an error
+  }
+
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
@@ -191,6 +208,23 @@ export function SignUpForm({
 
               {errorPassword && (
                 <div className="text-sm text-red-500 -mt-2">{errorPassword}</div>
+              )}
+
+              <div className="grid gap-2">
+                <Label htmlFor="confirm-password">Confirm Password</Label>
+                <Input
+                  id="confirm-password"
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  onFocus={handleConfirmPassword} // Reset error on focus
+                  aria-invalid={!!errorConfirmPassword && (confirmPassword.length < 3 || confirmPassword != password)}
+                  className={cn(errorConfirmPassword ? "border-red-500" : "")}
+                />
+              </div>
+
+              {errorConfirmPassword && (
+                <div className="text-sm text-red-500 -mt-2">{errorConfirmPassword}</div>
               )}
 
               <Button type="submit" className="w-full">

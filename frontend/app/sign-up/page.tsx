@@ -8,7 +8,7 @@ return (
             <div className="mb-6 text-center">
                 <h1 className="text-4xl font-semibold">Chatbot</h1>
             </div>
-            <SignUpForm />
+                <SignUpForm />
             </div>
         </div>
     )

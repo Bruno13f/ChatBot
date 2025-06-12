@@ -26,8 +26,8 @@ export function MainCard({userId}: MainCardProps) {
         <GroupsCard onInfoClick={() => setShowInfoPanel(true)} />
       </div>
       {/* Tabs */}
-      <div className="w-full md:w-4/6 lg:w-3/5 flex items-center justify-center">
-        <Tabs defaultValue="chat" className="w-full pb-10 px-4 md:pt-10 md:pb-0 mb:px-0 lg:pb-0 lg:px-0">
+      <div className="w-full md:w-4/6 lg:w-3/5 flex items-center justify-center h-full">
+        <Tabs defaultValue="chat" className="w-full h-full pb-10 px-4 md:pt-10 md:pb-0 mb:px-0 lg:pb-0 lg:px-0">
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="chat">ChatBot</TabsTrigger>
             <TabsTrigger value="openai">OpenAI</TabsTrigger>
