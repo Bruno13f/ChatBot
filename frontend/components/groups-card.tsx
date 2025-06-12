@@ -8,10 +8,39 @@ import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { CardWidget } from "@/components/card-widget"
 import { GroupActions } from "@/components/group-actions"
+import { createGroup } from "@/services/groups"
+import toast, { Toaster } from 'react-hot-toast';
 
 export function GroupsCard({ onInfoClick }: { onInfoClick?: () => void }) {
   
   let [showCreateGroup, setShowCreateGroup] = React.useState(false);
+
+  async function handleCreateGroup(data: string): Promise<void> {
+    try {
+      await createGroup(data);
+      toast.success('Group created successfully!', {
+        style: {
+          borderRadius: '6px',
+          background: 'var(--card)',
+          padding: '10px',
+          border: '1px solid var(--border)',
+          color: 'var(--text)',
+        },
+      })
+      setShowCreateGroup(false);
+    } catch (error) {
+      toast((error instanceof Error ? error.message : "Something went wrong."), {
+        icon: '❌',
+        style: {
+          borderRadius: '6px',
+          background: 'var(--card)',
+          padding: '10px',
+          border: '1px solid var(--border)',
+          color: 'var(--text)',
+        },
+      });
+    }
+  }
   
   return (
     <Card className="w-full h-full bg-background flex flex-col border-none shadow-none mb-4">
@@ -28,7 +57,7 @@ export function GroupsCard({ onInfoClick }: { onInfoClick?: () => void }) {
               </Button>
               {showCreateGroup && (
                   <CardWidget onClose={() => setShowCreateGroup(false)}>
-                    <GroupActions isCreate={true}/>
+                    <GroupActions isCreate={true} onSubmit={handleCreateGroup}/>
                   </CardWidget>
                 )
               }

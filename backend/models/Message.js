@@ -7,8 +7,8 @@ const messageSchema = new mongoose.Schema({
   sender: { type:String, required:true },
   isJoke: {type:Boolean, required:true },
   isWeather: {type:Boolean, required:true },
-  //isOpenAI: {type:Boolean, required:true },
-  //groupId: {type: mongoose.Schema.Types.ObjectId, ref: 'Group'},
+  isOpenAI: {type:Boolean, required:true },
+  groupId: {type: mongoose.Schema.Types.ObjectId, ref: 'Group'},
 });
 
 module.exports = mongoose.model('Message', messageSchema);
