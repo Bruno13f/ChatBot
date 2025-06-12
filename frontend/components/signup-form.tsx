@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label"
 import { Loader2 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import toast, { Toaster } from 'react-hot-toast';
+import { login, signup } from "@/services/auth"
 
 export function SignUpForm({
   className,
@@ -66,17 +67,8 @@ export function SignUpForm({
       if (!process.env.NEXT_PUBLIC_BACKEND_URI) {
         throw new Error('Backend URI is not defined');
       }
-      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URI}/sign-up`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
 
-      if (!res.ok) {
-        throw new Error('Error creating account.');
-      }
+      await signup(email, password);
       
       toast.success('Account created successfully!', {
         style: {
@@ -126,17 +118,8 @@ export function SignUpForm({
       if (!process.env.NEXT_PUBLIC_BACKEND_URI) {
         throw new Error('Backend URI is not defined');
       }
-      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URI}/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
-
-      if (!res.ok) {
-        return false
-      }
+      
+      const res = await login(email, password);
 
       const data = await res.json();
       localStorage.setItem('token', data.token);

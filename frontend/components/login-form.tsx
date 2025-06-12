@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label"
 import { useRouter } from "next/navigation" // Import useRouter for navigation
 import toast, { Toaster } from 'react-hot-toast';
 import { Loader2 } from "lucide-react"
+import { login } from "@/services/auth"
 
 export function LoginForm({
   className,
@@ -51,23 +52,11 @@ export function LoginForm({
     }
 
     try {
-      if (!process.env.NEXT_PUBLIC_BACKEND_URI) {
-        throw new Error('Backend URI is not defined');
-      }
-      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URI}/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
-
-      if (!res.ok) {
-        throw new Error('Invalid credentials');
-      }
-
+      if (!process.env.NEXT_PUBLIC_BACKEND_URI) throw new Error('Backend URI is not defined');
+      
+      const res = await login(email, password);
       const data = await res.json();
-      // Store the token in localStorage (or cookies for more security)
+
       localStorage.setItem('token', data.token);
       toast.success('Logged in successfully!', {
         style: {
