@@ -62,6 +62,22 @@ services:
       - .env
     environment:
       - BACKEND_URI=http://backend:${BACKEND_PORT}/api
+
+  sockets-open-ai:
+    container_name: sockets-open-ai
+    build:
+      context: ./sockets-open-ai
+    ports:
+      - "${SOCKET_OPENAI_PORT}:${SOCKET_OPENAI_PORT}"
+    networks:
+      - my-network
+    depends_on:
+      - backend
+      - frontend
+    env_file:
+      - .env
+    environment:
+      - BACKEND_URI=http://backend:${BACKEND_PORT}/api
   
 networks:
   my-network:
