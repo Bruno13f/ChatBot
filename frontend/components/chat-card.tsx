@@ -250,11 +250,11 @@ export function ChatCard({userId}: ChatCardProps) {
   return (
     <Card className="flex-1 p-4 flex flex-col h-100 md:h-170 lg:h-180">
       <CardContent className="flex-1 flex flex-col items-center relative w-full">
-        <div className={`absolute top-0 left-0 right-0 h-[320px] w-full overflow-y-auto px-4 flex justify-center ${fetching ? "items-center" : "items-start"}`}>
+        <div className={`absolute top-0 left-0 right-0 h-full w-full overflow-y-auto px-4 flex justify-center ${fetching ? "items-center" : "items-start"}`}>
           {fetching ? (
             <Loader2 className="animate-spin text-gray-500 w-6 h-6" />
           ) : (
-            <div className="space-y-4 w-full flex flex-col items-end relative min-h-[300px]">
+            <div className="space-y-4 w-full flex flex-col items-end relative min-h-full">
               {messages.length > 0 ? (
                 messages.map((msg, index) => (
                   <MessageCard 
@@ -265,8 +265,8 @@ export function ChatCard({userId}: ChatCardProps) {
                   />
                 ))
               ) : (
-                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-gray-500 text-center">
-                  Type !help to get started!
+                <div className="flex items-center justify-center w-full h-full absolute inset-0">
+                  <span className="text-gray-500 text-center">Type !help to get started!</span>
                 </div>
               )}
               <div ref={messagesEndRef} />

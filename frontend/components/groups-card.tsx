@@ -14,7 +14,7 @@ export function GroupsCard({ onInfoClick }: { onInfoClick?: () => void }) {
   let [showCreateGroup, setShowCreateGroup] = React.useState(false);
   
   return (
-    <Card className="w-full h-full bg-background flex flex-col border-0 shadow-none">
+    <Card className="w-full h-full bg-background flex flex-col border-none shadow-none mb-4">
       <div className="flex flex-col gap-y-6 pt-6 md:pt-0 lg:pt-0">
         <h1 className="text-xl font-regular">Groups (20)</h1>
         <div className="flex flex-col items-center justify-between gap-y-8">

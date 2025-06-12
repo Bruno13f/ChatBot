@@ -76,10 +76,10 @@ export function Navbar({showLogout}: NavbarProps) {
       </div>
       {/* Icons */}
       <div className="
-        flex flex-row items-center
+        flex flex-row items-center justify-center md:mb-40 lg:mb-40
         lg:flex-col lg:flex-1
       ">
-        <span title="Toggle Theme" className="lg:mt-30">
+        <span title="Toggle Theme">
           <ThemeToggle />
         </span>
         <Button
