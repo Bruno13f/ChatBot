@@ -5,6 +5,7 @@ export interface Group {
   members: {
     _id: string;
     name: string;
+    profilePicture?: string;
   }[];
   groupPicture?: string;
   createdAt?: Date;

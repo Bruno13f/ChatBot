@@ -304,7 +304,7 @@ export function GroupInfoCard({
                 isCurrentUser={member._id === userId}>
                 <Avatar className="cursor-pointer">
                   <AvatarImage
-                    src={`/api/users/${member._id}/avatar`}
+                    src={member.profilePicture || undefined}
                     alt={member.name}
                   />
                   <AvatarFallback

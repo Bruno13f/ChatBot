@@ -14,6 +14,7 @@ const formatGroup = (group) => ({
   members: group.members.map((member) => ({
     _id: member._id,
     name: member.name,
+    profilePicture: member.profilePicture,
   })),
   owner: group.owner,
   groupPicture: group.groupPicture,
@@ -45,7 +46,7 @@ exports.getGroupsFromUser = async (req, res) => {
   // Populate members with _id and name
   const groups = await Group.find({ members: userId }).populate(
     "members",
-    "_id name"
+    "_id name profilePicture"
   );
   const formattedGroups = groups.map(formatGroup);
 
@@ -86,7 +87,7 @@ exports.createGroup = async (req, res) => {
     // Populate members with _id and name
     const populatedGroup = await Group.findById(group._id).populate(
       "members",
-      "_id name"
+      "_id name profilePicture"
     );
 
     console.log("✅ Group created successfully");
@@ -184,7 +185,7 @@ exports.editGroup = async (req, res) => {
     await group.save();
     const populatedGroup = await Group.findById(groupId).populate(
       "members",
-      "_id name"
+      "_id name profilePicture"
     );
 
     console.log("✅ Group updated successfully");
@@ -225,11 +226,9 @@ exports.deleteGroupPicture = async (req, res) => {
     // Only owner can delete group picture
     if (group.owner.toString() !== user._id.toString()) {
       console.log("❌ Only the group owner can delete the group picture.");
-      return res
-        .status(403)
-        .json({
-          message: "Only the group owner can delete the group picture.",
-        });
+      return res.status(403).json({
+        message: "Only the group owner can delete the group picture.",
+      });
     }
 
     if (!group.groupPicture) {
@@ -250,7 +249,7 @@ exports.deleteGroupPicture = async (req, res) => {
 
       const populatedGroup = await Group.findById(groupId).populate(
         "members",
-        "_id name"
+        "_id name profilePicture"
       );
 
       console.log("✅ Group picture deleted successfully");
@@ -380,7 +379,7 @@ exports.addMemberToGroup = async (req, res) => {
     // Populate members for response
     const populatedGroup = await Group.findById(groupId).populate(
       "members",
-      "_id name"
+      "_id name profilePicture"
     );
     console.log("✅ Users added to group successfully");
     res.json({
@@ -477,11 +476,9 @@ exports.removeMemberFromGroup = async (req, res) => {
     });
   } catch (err) {
     console.log("❌ Error removing member from group:", err);
-    res
-      .status(500)
-      .json({
-        error: "Failed to remove member from group",
-        details: err.message,
-      });
+    res.status(500).json({
+      error: "Failed to remove member from group",
+      details: err.message,
+    });
   }
 };
