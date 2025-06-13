@@ -91,7 +91,12 @@ export function GroupInfoCard() {
         </div>
         {showEditGroup && (
           <CardWidget onClose={() => setShowEditGroup(false)}>
-            <GroupActions isCreate={false}/>
+            <GroupActions
+              isCreate={false}
+              onSubmit={async (name: string) => {
+                console.log("Group name updated to:", name);
+              }}
+            />
           </CardWidget>
         )}
 
