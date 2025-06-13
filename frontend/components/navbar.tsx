@@ -20,6 +20,7 @@ import { useState } from "react"
 import { CardWidget } from "@/components/card-widget"
 import { EditProfile } from "@/components/edit-profile"
 import { ToastSuccess } from "./ui/toast-success"
+import { ToastPromise } from "./ui/toast-promise"
 
 interface NavbarProps {
   showLogout: boolean
@@ -29,13 +30,23 @@ export function Navbar({showLogout}: NavbarProps) {
   const router = useRouter()
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [isProfileOpen, setIsProfileOpen] = useState(false)
-
   const handleLogout = async () => {
-    localStorage.removeItem("token")
-    localStorage.removeItem("userId")
-    router.push("/login")
-    ToastSuccess('Logged out successfully!');
-    setIsDialogOpen(false)
+    try {
+      await ToastPromise(
+        new Promise((resolve) => {
+          router.push("/login");
+          resolve(true);
+        }),
+        'Logging out...',
+        'Logged out successfully!',
+        'Failed to log out!'
+      );
+      localStorage.removeItem("token");
+      localStorage.removeItem("userId");
+      setIsDialogOpen(false);
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
   }
 
   return (

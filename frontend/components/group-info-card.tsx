@@ -86,25 +86,23 @@ export function GroupInfoCard({ group, userId, onGroupDeleted, onGroupUpdated }:
 
   const handleAddUserButton = async () => {
     if (selectedUserIds.length === 0) return;
-    ToastPromise(addUsersToGroup(group._id, selectedUserIds), 'Adding users...', 'Users added to group!', 'Failed to add users to group.'); 
     try {
-      const updatedGroup = await addUsersToGroup(group._id, selectedUserIds);
+      const updatedGroup = await ToastPromise(addUsersToGroup(group._id, selectedUserIds), 'Adding users...', 'Users added to group!', 'Failed to add users to group.'); 
       setSelectedUserIds([]);
       if (onGroupUpdated) onGroupUpdated(updatedGroup);
       setInfoText("Invite users...");
     } catch (err: any) {
-      ToastError(err.message || 'Failed to add users to group.');
+      console.log(err.message);
     }
   };
 
   const handleDeleteGroup = async () => {
     try {
-      await deleteGroup(group._id);
+      ToastPromise(deleteGroup(group._id), 'Deleting group...', 'Group deleted successfully!', 'Failed to delete group.');
       setIsDialogOpen(false);
-      ToastSuccess('Group deleted successfully!');
       if (onGroupDeleted) onGroupDeleted(group._id);
     } catch (err) {
-      alert("Failed to delete group.");
+      console.log(err);
     }
   }
 

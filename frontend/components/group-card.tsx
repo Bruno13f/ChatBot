@@ -59,7 +59,7 @@ export function GroupCard({ group, maxAvatars = 5, isSelected = false }: GroupCa
     <Card className={`w-[99%] h-full py-0 hover:bg-muted cursor-pointer ${isSelected ? 'bg-muted' : 'bg-background'}`}>
         <div className="flex flex-row items-center justify-start gap-x-2 pl-4 py-4">
             {group.members.length > 1 ? (
-              <AvatarGroup className="flex items-center" max={maxAvatarsLocal}>
+              <AvatarGroup className="flex items-center" max={group.members.length > maxAvatarsLocal ? maxAvatarsLocal : 0}>
                 {group.members.map((member) => (
                   <Avatar key={member._id} className="-ml-2 first:ml-0 cursor-pointer">
                     <AvatarImage src={`/api/users/${member._id}/avatar`} alt={`User ${member._id}`} />
