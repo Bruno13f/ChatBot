@@ -11,6 +11,9 @@ import {
 import { GroupsCard } from "@/components/groups-card"
 import { GroupInfoCard } from "@/components/group-info-card"
 import { CardWidget } from "./card-widget"
+import { useEffect } from "react"
+import { getGroups } from "@/services/groups"
+import { Group } from "@/models/group"
 
 interface MainCardProps {
   userId: string
@@ -18,12 +21,26 @@ interface MainCardProps {
 
 export function MainCard({userId}: MainCardProps) {
   const [showInfoPanel, setShowInfoPanel] = React.useState(false);
+  const [groups, setGroups] = React.useState<Group[]>([]);
+  const isFirstRender = React.useRef(true);
+
+  useEffect(() => {
+    if (isFirstRender.current) { // senao da fetch 2 vezes
+      isFirstRender.current = false;
+      const fetchGroups = async () => {
+        const groups = await getGroups();
+        setGroups(groups);
+        console.log(groups);
+      }
+      fetchGroups();
+    }
+  }, []);
 
   return (
     <div className="flex flex-col md:flex-row items-stretch justify-center w-full h-full gap-x-5 gap-y-5 relative">
       {/* GroupsCard: pass setShowInfoPanel to Info button */}
       <div className="w-full md:w-2/6 lg:w-1/6 flex items-center justify-center px-4 mb:px-0 lg:px-0">
-        <GroupsCard onInfoClick={() => setShowInfoPanel(true)} />
+        <GroupsCard onInfoClick={() => setShowInfoPanel(true)} groups={groups} />
       </div>
       {/* Tabs */}
       <div className="w-full md:w-4/6 lg:w-3/5 flex items-center justify-center h-full">

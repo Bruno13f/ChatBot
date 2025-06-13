@@ -3,7 +3,7 @@ const router = express.Router();
 
 const { login, signUp, validateToken } = require('../controllers/authController');
 const { getMessages, postMessage, getJokes } = require('../controllers/messageController');
-const { createGroup } = require('../controllers/groupController');
+const { createGroup, getGroupsFromUser } = require('../controllers/groupController');
 const authenticateToken = require('../middleware/auth');
 
 router.post('/login', login);
@@ -15,6 +15,7 @@ router.post('/messages', authenticateToken, postMessage);
 
 router.get('/jokes/:userId', authenticateToken, getJokes);
 
+router.get('/users/:userId/groups', authenticateToken, getGroupsFromUser);
 router.post('/groups', authenticateToken, createGroup);
 
 module.exports = router;

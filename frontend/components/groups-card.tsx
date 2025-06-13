@@ -10,14 +10,22 @@ import { CardWidget } from "@/components/card-widget"
 import { GroupActions } from "@/components/group-actions"
 import { createGroup } from "@/services/groups"
 import toast, { Toaster } from 'react-hot-toast';
+import { Group } from "@/models/group"
 
-export function GroupsCard({ onInfoClick }: { onInfoClick?: () => void }) {
+interface GroupsCardProps {
+  groups: Group[]
+  onInfoClick?: () => void
+}
+
+export function GroupsCard({ onInfoClick, groups }: GroupsCardProps) {
   
   let [showCreateGroup, setShowCreateGroup] = React.useState(false);
 
   async function handleCreateGroup(data: string): Promise<void> {
     try {
-      await createGroup(data);
+      const group = await createGroup(data);
+      groups.push(group);
+
       toast.success('Group created successfully!', {
         style: {
           borderRadius: '6px',
@@ -43,9 +51,9 @@ export function GroupsCard({ onInfoClick }: { onInfoClick?: () => void }) {
   }
   
   return (
-    <Card className="w-full h-full bg-background flex flex-col border-none shadow-none mb-4">
+    <Card className="w-full h-full bg-background flex justify-center border-none shadow-none mb-4">
       <div className="flex flex-col gap-y-6 pt-6 md:pt-0 lg:pt-0">
-        <h1 className="text-xl font-regular">Groups (20)</h1>
+        <h1 className="text-xl font-regular">Groups ({groups.length})</h1>
         <div className="flex flex-col items-center justify-between gap-y-8">
           <Input type="text" placeholder="Search for groups..." />
           <div className="flex flex-row items-center justify-between w-full px-2">
@@ -72,22 +80,19 @@ export function GroupsCard({ onInfoClick }: { onInfoClick?: () => void }) {
           </div>
         </div>
         <div className="flex flex-col items-center justify-center w-full h-full">
-          <ScrollArea className="flex-1 md:max-h-140 lg:max-h-160 w-full">
+          { groups.length == 0 ? (
+            <div className="flex flex-col items-center justify-center w-full h-full">
+              <p className="text-sm text-muted-foreground">No groups found. Create a new one!</p>
+            </div>
+          ) : (
+            <ScrollArea className="flex-1 md:max-h-140 lg:max-h-160 w-full">
             <div className="flex flex-row md:flex-col lg:flex-col gap-2 w-full">
-              <GroupCard groupName="Acabar cu curso" lastMessage="guerra safado"/>
-              <GroupCard groupName="Grupo de estudo" lastMessage="Vamos estudar juntos!"/>
-              <GroupCard groupName="Amigos do futebol" lastMessage="Quem vai jogar hoje?"/>
-              <GroupCard groupName="Projeto de pesquisa" lastMessage="Precisamos revisar o relatório"/>
-              <GroupCard groupName="Família" lastMessage="Vamos nos reunir no domingo?"/>
-              <GroupCard groupName="Família" lastMessage="Vamos nos reunir no domingo?"/>
-              <GroupCard groupName="Família" lastMessage="Vamos nos reunir no domingo?"/>
-              <GroupCard groupName="Família" lastMessage="Vamos nos reunir no domingo?"/>
-              <GroupCard groupName="Família" lastMessage="Vamos nos reunir no domingo?"/>
-              <GroupCard groupName="Família" lastMessage="Vamos nos reunir no domingo?"/>
-              <GroupCard groupName="Família" lastMessage="Vamos nos reunir no domingo?"/>
-              <GroupCard groupName="Família" lastMessage="Vamos nos reunir no domingo?"/>
+              {groups.map((group) => (
+                <GroupCard key={group._id} group={group}/>
+              ))}
             </div>
           </ScrollArea>
+          )}
         </div>
       </div>
     </Card>
