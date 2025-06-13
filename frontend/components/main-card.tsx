@@ -14,6 +14,7 @@ import { CardWidget } from "./card-widget"
 import { useEffect } from "react"
 import { getGroups } from "@/services/groups"
 import { Group } from "@/models/group"
+import { Loader2 } from "lucide-react"
 
 interface MainCardProps {
   userId: string
@@ -23,26 +24,58 @@ export function MainCard({userId}: MainCardProps) {
   const [showInfoPanel, setShowInfoPanel] = React.useState(false);
   const [groups, setGroups] = React.useState<Group[]>([]);
   const [selectedGroup, setSelectedGroup] = React.useState<Group | null>(null);
+  const [isLoading, setIsLoading] = React.useState(true);
   const isFirstRender = React.useRef(true);
 
   useEffect(() => {
-    if (isFirstRender.current) { // senao da fetch 2 vezes
+    if (isFirstRender.current) {
       isFirstRender.current = false;
       const fetchGroups = async () => {
-        const groups = await getGroups();
-        setGroups(groups);
-        setSelectedGroup(groups[0] || null); // seleciona o primeiro grupo por padrão
-        console.log(groups);
-      }
+        try {
+          const groups = await getGroups();
+          setGroups(groups);
+          console.log(groups);
+        } catch (error) {
+          console.error('Error fetching groups:', error);
+        } finally {
+          setIsLoading(false);
+        }
+      };
       fetchGroups();
     }
   }, []);
+
+  const handleGroupClick = (group: Group) => {
+    if (selectedGroup?._id === group._id) {
+      setSelectedGroup(null);
+      localStorage.removeItem('selectedGroupId');
+    } else {
+      setSelectedGroup(group);
+      localStorage.setItem('selectedGroupId', group._id);
+    }
+  }
+
+  useEffect(() => {
+    const savedGroupId = localStorage.getItem('selectedGroupId');
+    if (savedGroupId) {
+      const savedGroup = groups.find((g: Group) => g._id === savedGroupId);
+      setSelectedGroup(savedGroup || null);
+    }
+  }, [groups]);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center w-full h-full">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col md:flex-row items-stretch justify-center w-full h-full gap-x-5 gap-y-5 relative">
       {/* GroupsCard: pass setShowInfoPanel to Info button */}
       <div className="w-full md:w-2/6 lg:w-1/6 flex items-center justify-center px-4 mb:px-0 lg:px-0">
-        <GroupsCard onInfoClick={() => setShowInfoPanel(true)} groups={groups} onGroupClick={setSelectedGroup} />
+        <GroupsCard onInfoClick={() => setShowInfoPanel(true)} groups={groups} onGroupClick={handleGroupClick} selectedGroupId={selectedGroup?._id} />
       </div>
       {/* Tabs */}
       <div className="w-full md:w-4/6 lg:w-3/5 flex items-center justify-center h-full">

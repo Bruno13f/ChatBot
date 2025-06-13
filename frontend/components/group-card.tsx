@@ -9,6 +9,7 @@ import { Group } from "@/models/group";
 interface GroupCardProps {
     group: Group;
     maxAvatars?: number;
+    isSelected?: boolean;
 }
 
 function useResponsiveAvatarMax() {
@@ -34,7 +35,7 @@ function useResponsiveAvatarMax() {
   return max;
 }
 
-export function GroupCard({ group, maxAvatars = 5 }: GroupCardProps) {
+export function GroupCard({ group, maxAvatars = 5, isSelected = false }: GroupCardProps) {
   const maxAvatarsLocal = useResponsiveAvatarMax();
 
   // Function to get initials from a name (you'll need to implement this based on your user data)
@@ -55,7 +56,7 @@ export function GroupCard({ group, maxAvatars = 5 }: GroupCardProps) {
   };
 
   return (
-    <Card className="w-[99%] h-full bg-background py-0 hover:bg-muted cursor-pointer">
+    <Card className={`w-[99%] h-full py-0 hover:bg-muted cursor-pointer ${isSelected ? 'bg-muted' : 'bg-background'}`}>
         <div className="flex flex-row items-center justify-start gap-x-2 pl-4 py-4">
             {group.members.length > 1 ? (
               <AvatarGroup className="flex items-center" max={maxAvatarsLocal}>
