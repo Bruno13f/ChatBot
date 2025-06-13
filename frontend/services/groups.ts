@@ -49,3 +49,25 @@ export async function createGroup(name: string) {
     if (!res.ok) throw new Error(data.message || 'Something went wrong.');
     return data.group;
 }
+
+export async function updateGroup(groupId: string, name: string, picture?: string) {
+    if (typeof window === "undefined") return; // SSR guard
+
+    const token = localStorage.getItem('token');
+    if (!token) {
+        window.location.href = "/login";
+        return;
+    }
+
+    const res = await fetch(`${BACKEND_URI}/groups/${groupId}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ name, picture }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Something went wrong.');
+    return data.group;
+}
