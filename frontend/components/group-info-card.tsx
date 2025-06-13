@@ -180,7 +180,7 @@ export function GroupInfoCard({
       <div className="flex flex-col items-center justify-center">
         <Avatar className="size-22">
           <AvatarImage
-            src={group.groupPicture || "https://github.com/shadcn.png"}
+            src={group.groupPicture || undefined}
             alt={group.name}
           />
           <AvatarFallback className="bg-gray-400 text-white">
