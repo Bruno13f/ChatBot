@@ -18,13 +18,15 @@ import { H4 } from "@/components/ui/typography";
 import { disconnectMiddlewareSocket, getMiddlewareSocket, initMiddlewareSocket } from "@/lib/socket-middleware";
 import { getMessagesOfGroup } from "@/services/messages";
 import { Message } from "@/models/message";
+import { postMessage } from "@/services/messages";
+import { User } from "@/models/user";
 
 interface ChatCardProps {
-  userId: string;
+  user: User | null;
   group: Group | null;
 }
 
-export function ChatCard({ userId, group }: ChatCardProps) {
+export function ChatCard({ user, group }: ChatCardProps) {
   const [messages, setMessages] = React.useState<Message[]>([]);
   const [message, setMessage] = React.useState("");
   const [loading, setLoading] = React.useState(false);
@@ -38,7 +40,7 @@ export function ChatCard({ userId, group }: ChatCardProps) {
   // Effect for initial mount and socket setup
   React.useEffect(() => {
     const middlewareSocket = initMiddlewareSocket();
-
+    
   }, []); // Empty dependency array means this runs on mount
 
   // Effect for fetching messages when group changes
@@ -59,6 +61,7 @@ export function ChatCard({ userId, group }: ChatCardProps) {
         }
 
         const data = await getMessagesOfGroup(group._id);
+        console.log("Messages fetched from API: ", data);
 
         // Format messages for our new structure
         const formattedMessages = data.map((msgObj: Message) => ({
@@ -129,183 +132,160 @@ export function ChatCard({ userId, group }: ChatCardProps) {
   }, [messages]);
 
   const sendMessage = async () => {
-    // if (message.trim() === "") return;
+    if (message.trim() === "") return;
+    if (!user) return;
 
-    // setLoading(true);
+    setLoading(true);
 
-    // const token = localStorage.getItem("token");
+    const token = localStorage.getItem("token");
 
-    // if (!token) {
-    //   setLoading(false);
-    //   return;
-    // }
+    if (!token) {
+      setLoading(false);
+      return;
+    }
 
-    // try {
-    //   const messageTrim = message.trim().toLowerCase();
+    try {
+      const messageTrim = message.trim().toLowerCase();
 
-    //   const success = await saveMessageToAPI(message, "user");
+      const success = await saveMessageToAPI(message, user.name);
 
-    //   if (!success) {
-    //     setLoading(false);
-    //     return;
-    //   }
+      if (!success) {
+        setLoading(false);
+        return;
+      }
 
-    //   if (messageTrim === "!help") {
-    //     const newMessage =
-    //       `🤖 **Available Commands:**\n\n` +
-    //       `**JOKES 🤣**\n` +
-    //       `- \`!joke\` → Get a random joke\n\n` +
-    //       `- \`!joke category\` → Get a joke from a specific category\n\n` +
-    //       `  **Available categories:** programming, misc, dark, pun, spooky, christmas\n\n` +
-    //       `  **Example:** \!joke programming\n\n` +
-    //       `**WEATHER ⛅**\n` +
-    //       `- \`!weather city days\` → Get a weather report for a city for the next specified number of days\n\n` +
-    //       `  **Days:** 1, 3, 7, 14, 16\n\n` +
-    //       `  **Example:** \`!weather London 3\``;
+      if (messageTrim === "!help") {
+        const newMessage =
+          `🤖 **Available Commands:**\n\n` +
+          `**JOKES 🤣**\n` +
+          `- \`!joke\` → Get a random joke\n\n` +
+          `- \`!joke category\` → Get a joke from a specific category\n\n` +
+          `  **Available categories:** programming, misc, dark, pun, spooky, christmas\n\n` +
+          `  **Example:** \!joke programming\n\n` +
+          `**WEATHER ⛅**\n` +
+          `- \`!weather city days\` → Get a weather report for a city for the next specified number of days\n\n` +
+          `  **Days:** 1, 3, 7, 14, 16\n\n` +
+          `  **Example:** \`!weather London 3\``;
 
-    //     await saveMessageToAPI(newMessage, "system");
-    //     setLoading(false);
-    //     return;
-    //   }
+        await saveMessageToAPI(newMessage, "system");
+        setLoading(false);
+        return;
+      }
 
-    //   const parts = messageTrim.split(" ");
+      const parts = messageTrim.split(" ");
 
-    //   if (parts[0] === "!joke") {
-    //     const validCategories = [
-    //       "programming",
-    //       "misc",
-    //       "dark",
-    //       "pun",
-    //       "spooky",
-    //       "christmas",
-    //     ];
+      // if (parts[0] === "!joke") {
+      //   const validCategories = [
+      //     "programming",
+      //     "misc",
+      //     "dark",
+      //     "pun",
+      //     "spooky",
+      //     "christmas",
+      //   ];
 
-    //     if (parts[1] && !validCategories.includes(parts[1])) {
-    //       const newMessage = `**⚠️ Invalid Category:** Available categories are programming, misc, dark, pun, spooky, christmas.`;
-    //       await saveMessageToAPI(newMessage, "system");
-    //       setLoading(false);
-    //       return;
-    //     }
+      //   if (parts[1] && !validCategories.includes(parts[1])) {
+      //     const newMessage = `**⚠️ Invalid Category:** Available categories are programming, misc, dark, pun, spooky, christmas.`;
+      //     await saveMessageToAPI(newMessage, "system");
+      //     setLoading(false);
+      //     return;
+      //   }
 
-    //     const socket = getJokeSocket();
+      //   const socket = getJokeSocket();
 
-    //     // Emit message to server
-    //     socket.emit("message", {
-    //       text: message,
-    //       sender: "user",
-    //       token,
-    //       userId,
-    //     });
+      //   // Emit message to server
+      //   socket.emit("message", {
+      //     text: message,
+      //     sender: "user",
+      //     token,
+      //     userId,
+      //   });
 
-    //     // Wait for the joke response from the socket before enabling the button
-    //     socket.on("message", (newMessage) => {
-    //       if (newMessage.sender === "system") {
-    //         setLoading(false);
-    //       }
-    //     });
+      //   // Wait for the joke response from the socket before enabling the button
+      //   socket.on("message", (newMessage) => {
+      //     if (newMessage.sender === "system") {
+      //       setLoading(false);
+      //     }
+      //   });
 
-    //     return;
-    //   }
+      //   return;
+      // }
 
-    //   if (parts[0] === "!weather") {
-    //     if (!parts[1] || !parts[2]) {
-    //       const newMessage = "**⚠️ Usage:** `!weather <city> <days>`";
-    //       await saveMessageToAPI(newMessage, "system");
-    //       setLoading(false);
-    //       return;
-    //     }
+      // if (parts[0] === "!weather") {
+      //   if (!parts[1] || !parts[2]) {
+      //     const newMessage = "**⚠️ Usage:** `!weather <city> <days>`";
+      //     await saveMessageToAPI(newMessage, "system");
+      //     setLoading(false);
+      //     return;
+      //   }
 
-    //     if (!validDays.includes(parts[2])) {
-    //       const newMessage = "**⚠️ Invalid Days:** 1, 3, 7, 14, 16";
-    //       await saveMessageToAPI(newMessage, "system");
-    //       setLoading(false);
-    //       return;
-    //     }
+      //   if (!validDays.includes(parts[2])) {
+      //     const newMessage = "**⚠️ Invalid Days:** 1, 3, 7, 14, 16";
+      //     await saveMessageToAPI(newMessage, "system");
+      //     setLoading(false);
+      //     return;
+      //   }
 
-    //     const socket = getWeatherSocket();
+      //   const socket = getWeatherSocket();
 
-    //     socket.emit("message", {
-    //       text: message,
-    //       sender: "user",
-    //       token,
-    //       userId,
-    //     });
+      //   socket.emit("message", {
+      //     text: message,
+      //     sender: "user",
+      //     token,
+      //     userId,
+      //   });
 
-    //     socket.on("message", (newMessage) => {
-    //       if (newMessage.sender === "system") {
-    //         setLoading(false);
-    //       }
-    //     });
+      //   socket.on("message", (newMessage) => {
+      //     if (newMessage.sender === "system") {
+      //       setLoading(false);
+      //     }
+      //   });
 
-    //     return;
-    //   }
+      //   return;
+      // }
 
-    //   if (messageTrim.startsWith("!")) {
-    //     const newMessage =
-    //       `🤖 **Unknown Command:**\n\n` +
-    //       `Type \`!help\` to see available commands.`;
+      // if (messageTrim.startsWith("!")) {
+      //   const newMessage =
+      //     `🤖 **Unknown Command:**\n\n` +
+      //     `Type \`!help\` to see available commands.`;
 
-    //     await saveMessageToAPI(newMessage, "system");
-    //     setLoading(false);
-    //     return;
-    //   }
-    // } catch (error) {
-    //   console.error("Error sending message:", error);
-    // } finally {
-    //   if (message.trim() !== "!joke") {
-    //     setLoading(false);
-    //   }
-    // }
+      //   await saveMessageToAPI(newMessage, "system");
+      //   setLoading(false);
+      //   return;
+      // }
+    } catch (error) {
+      console.error("Error sending message:", error);
+    } finally {
+      if (message.trim() !== "!joke") {
+        setLoading(false);
+      }
+    }
   };
 
   const saveMessageToAPI = async (message: string, sender: string) => {
-    // if (!message.trim()) return;
+    if (!message.trim()) return;
+    if (!user) return;
 
-    // const token = localStorage.getItem("token"); // or use cookies, context, etc.
+    const token = localStorage.getItem("token"); // or use cookies, context, etc.
 
-    // if (!token) {
-    //   throw new Error("No token found");
-    // }
+    if (!token) {
+      throw new Error("No token found");
+    }
 
-    // console.log("Saving message to API:", {
-    //   userId,
-    //   message,
-    //   sender,
-    // });
 
-    // try {
-    //   const response = await fetch(
-    //     `${process.env.NEXT_PUBLIC_BACKEND_URI}/messages`,
-    //     {
-    //       method: "POST",
-    //       headers: {
-    //         Authorization: `Bearer ${token}`,
-    //         "Content-Type": "application/json",
-    //       },
-    //       body: JSON.stringify({
-    //         userId,
-    //         message,
-    //         sender,
-    //         isJoke: "false",
-    //         isWeather: "false",
-    //         isOpenAI: "false",
-    //       }), // Include sender and default isJoke
-    //     }
-    //   );
+    try {
+      const data = await postMessage(group!._id, message, sender, false, false, false, user._id);
 
-    //   if (!response.ok) {
-    //     return false;
-    //   }
-
-    //   setMessages((prevMessages) => [
-    //     ...prevMessages,
-    //     { text: message, sender, isWeather: false },
-    //   ]);
-    //   setMessage("");
-    //   return true;
-    // } catch (error) {
-    //   return false;
-    // }
+      setMessages((prevMessages) => [
+        ...prevMessages,
+        { _id: data._id, timestamp: data.timestamp, message: data.message, sender: data.sender, isJoke: data.isJoke, isWeather: data.isWeather, isOpenAI: data.isOpenAI, groupId: data.groupId },
+      ]);
+      setMessage("");
+      return true;
+    } catch (error) {
+      console.error("Error saving message to API:", error);
+      return false;
+    }
   };
 
   return (

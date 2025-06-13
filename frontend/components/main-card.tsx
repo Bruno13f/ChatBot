@@ -15,6 +15,8 @@ import { useEffect } from "react"
 import { getGroupsOfUser } from "@/services/groups"
 import { Group } from "@/models/group"
 import { Loader2 } from "lucide-react"
+import { getUserById } from "@/services/users"
+import { User } from "@/models/user"
 
 interface MainCardProps {
   userId: string
@@ -26,6 +28,7 @@ export function MainCard({userId}: MainCardProps) {
   const [selectedGroup, setSelectedGroup] = React.useState<Group | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
   const isFirstRender = React.useRef(true);
+  const [user, setUser] = React.useState<User | null>(null);
 
   useEffect(() => {
     if (isFirstRender.current) {
@@ -39,6 +42,10 @@ export function MainCard({userId}: MainCardProps) {
         } finally {
           setIsLoading(false);
         }
+
+        const user = await getUserById(userId);
+        setUser(user);
+
       };
       fetchGroups();
     }
@@ -86,16 +93,16 @@ export function MainCard({userId}: MainCardProps) {
             <TabsTrigger value="weather">Weather</TabsTrigger>
           </TabsList>
           <TabsContent value="chat">
-            <ChatCard userId={userId} group={selectedGroup} />
+            <ChatCard user={user} group={selectedGroup} />
           </TabsContent>
           <TabsContent value="openai">
-            <JokesCard userId={userId} />
+            <JokesCard user={user} />
           </TabsContent>
           <TabsContent value="jokes">
-            <JokesCard userId={userId} />
+            <JokesCard user={user} />
           </TabsContent>
           <TabsContent value="weather">
-            <JokesCard userId={userId} />
+            <JokesCard user={user} />
           </TabsContent>
         </Tabs>
       </div>

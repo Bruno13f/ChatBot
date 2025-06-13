@@ -33,10 +33,9 @@ router.post("/login", login);
 router.post("/sign-up", signUp);
 router.post("/validate-token", validateToken);
 
-router.post("/messages", authenticateToken, postMessage);
-
 router.get("/jokes/:userId", authenticateToken, getJokes);
 
+router.post("/groups/:groupId/messages", authenticateToken, postMessage);
 router.get("/groups/:groupId/messages", authenticateToken, getMessages);
 router.get("/users/:userId/groups", authenticateToken, getGroupsFromUser);
 router.get("/users", authenticateToken, getAllUsers);

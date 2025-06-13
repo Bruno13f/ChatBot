@@ -6,18 +6,20 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { H4 } from "@/components/ui/typography"
 import { JokesCarousel } from "./jokes-carousel"
 import { Loader2 } from "lucide-react"
+import { User } from "@/models/user"
 
 interface JokesCardProps {
-  userId: string
+  user: User | null;
 }
 
-export function JokesCard({userId}: JokesCardProps) {
+export function JokesCard({user}: JokesCardProps) {
   const [joke, setJoke] = React.useState<string | null>(null)
   const [jokes, setJokes] = React.useState<string[]>([]);
   const [fetching, setFetching] = React.useState(true);
   const [loading, setLoading] = React.useState(false);
 
   const fetchJokes = async () => {
+    if (!user) return;
     setFetching(true);
     
     const token = localStorage.getItem("token"); // or use cookies, context, etc.
@@ -28,7 +30,7 @@ export function JokesCard({userId}: JokesCardProps) {
     }
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URI}/jokes/${userId}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URI}/jokes/${user._id}`, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",

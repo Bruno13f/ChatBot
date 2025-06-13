@@ -46,6 +46,7 @@ exports.getMessages = async (req, res) => {
     }
 
     const messages = await Message.find({ groupId }).sort({ timestamp: 1 });
+    console.log("Messages fetched from database: ", messages);
 
     const formatted = messages.map(formatMessage);
     console.log("✅ Messages fetched successfully");
@@ -59,7 +60,23 @@ exports.getMessages = async (req, res) => {
 };
 
 exports.postMessage = async (req, res) => {
-  const { message, sender, isJoke, isWeather, userId, isOpenAI } = req.body;
+
+  const groupId = req.params.groupId;
+
+  console.log("\n🤼 Posting message for group: ", groupId);
+
+  if (!groupId) {
+    console.log("❌ Missing group id");
+    return res.status(400).json({ error: "Missing group id" });
+  }
+
+  const group = await Group.findById(groupId);
+  if (!group) {
+    console.log("❌ Group not found");
+    return res.status(404).json({ error: "Group not found" });
+  }
+
+  const { message, sender, isJoke, isWeather, isOpenAI, userId} = req.body;
 
   if (
     !message ||
@@ -69,22 +86,26 @@ exports.postMessage = async (req, res) => {
     isOpenAI === undefined ||
     !userId
   ) {
+    console.log("❌ Missing one of the required fields");
     return res
       .status(400)
       .json({ error: "Missing one of the required fields" });
   }
 
   try {
-    await new Message({
+    const savedMessage = await new Message({
       userId,
       message,
       sender,
       isJoke,
       isWeather,
       isOpenAI,
+      groupId
     }).save();
-    res.json({ success: true, message: "Message saved!" });
+
+    res.json({ success: true, message: "Message saved!", data: formatMessage(savedMessage) });
   } catch (err) {
+    console.log("❌ Failed to save message", err);
     res
       .status(500)
       .json({ error: "Failed to save message", details: err.message });
