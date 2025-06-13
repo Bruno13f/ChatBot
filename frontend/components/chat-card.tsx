@@ -13,14 +13,11 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
-import { getJokeSocket, disconnectJokeSocket } from "@/lib/socket-jokes";
-import {
-  getWeatherSocket,
-  disconnectWeatherSocket,
-} from "@/lib/socket-weather";
 import { Group } from "@/models/group";
 import { H4 } from "@/components/ui/typography";
-import { TabsContent } from "@/components/ui/tabs";
+import { disconnectMiddlewareSocket, getMiddlewareSocket, initMiddlewareSocket } from "@/lib/socket-middleware";
+import { getMessagesOfGroup } from "@/services/messages";
+import { Message } from "@/models/message";
 
 interface ChatCardProps {
   userId: string;
@@ -28,85 +25,92 @@ interface ChatCardProps {
 }
 
 export function ChatCard({ userId, group }: ChatCardProps) {
-  const [messages, setMessages] = React.useState<
-    Array<{ text: string; sender: string; isWeather: boolean }>
-  >([]);
+  const [messages, setMessages] = React.useState<Message[]>([]);
   const [message, setMessage] = React.useState("");
   const [loading, setLoading] = React.useState(false);
   const [fetching, setFetching] = React.useState(true);
   const messagesEndRef = React.useRef<HTMLDivElement | null>(null);
   const validDays = ["1", "3", "7", "14", "16"];
+  const isFirstRender = React.useRef(true);
 
   const noGroupSelected = !group;
 
+  // Effect for initial mount and socket setup
   React.useEffect(() => {
-    // const fetchMessages = async () => {
-    //   setFetching(true);
-    //   try {
-    //     const token = localStorage.getItem("token"); // or use cookies, context, etc.
+    const middlewareSocket = initMiddlewareSocket();
 
-    //     if (!token) {
-    //       setFetching(false);
-    //       throw new Error("No token found");
-    //     }
+  }, []); // Empty dependency array means this runs on mount
 
-    //     const response = await fetch(
-    //       `${process.env.NEXT_PUBLIC_BACKEND_URI}/messages/${userId}`,
-    //       {
-    //         headers: {
-    //           Authorization: `Bearer ${token}`,
-    //           "Content-Type": "application/json",
-    //         },
-    //       }
-    //     );
+  // Effect for fetching messages when group changes
+  React.useEffect(() => {
+    const fetchMessages = async () => {
+      if (!group) {
+        setFetching(false);
+        return;
+      }
 
-    //     if (!response.ok) {
-    //       throw new Error("Failed to fetch messages");
-    //     }
-    //     const data = await response.json();
+      setFetching(true);
+      try {
+        const token = localStorage.getItem("token");
 
-    //     // Format messages for our new structure
-    //     const formattedMessages = data.map(
-    //       (msgObj: {
-    //         message: string;
-    //         sender: string;
-    //         isWeather: boolean;
-    //       }) => ({
-    //         text: msgObj.message,
-    //         sender: msgObj.sender,
-    //         isWeather: msgObj.isWeather,
-    //       })
-    //     );
+        if (!token) {
+          setFetching(false);
+          throw new Error("No token found");
+        }
 
-    //     setMessages(formattedMessages);
-    //   } catch (error) {
-    //     console.error("Error fetching messages:", error);
-    //   } finally {
-    //     setFetching(false);
-    //   }
-    // };
+        const data = await getMessagesOfGroup(group._id);
 
-    // fetchMessages();
+        // Format messages for our new structure
+        const formattedMessages = data.map((msgObj: Message) => ({
+          _id: msgObj._id,
+          timestamp: msgObj.timestamp,
+          message: msgObj.message,
+          sender: msgObj.sender,
+          isJoke: msgObj.isJoke,
+          isWeather: msgObj.isWeather,
+          isOpenAI: msgObj.isOpenAI,
+          groupId: msgObj.groupId
+        }));
+
+        setMessages(formattedMessages);
+      } catch (error) {
+        console.error("Error fetching messages:", error);
+      } finally {
+        setFetching(false);
+      }
+    };
+
+    // Fetch messages on mount
+    fetchMessages();
 
     // const jokeSocket = getJokeSocket();
 
-    // jokeSocket.on("message", (newMessage) => {
+    // jokeSocket.on("message", (newMessage: Message) => {
     //   setMessages((prevMessages) => [...prevMessages, newMessage]);
     // });
 
     // const jokeWeather = getWeatherSocket();
 
-    // jokeWeather.on("message", (newMessage) => {
-    //   if (newMessage.sender === "system") {
+    // jokeWeather.on("message", (newMessage: Message) => {
+    //   if (newMessage.sender.name === "system") {
     //     // Process the array of temperatures
-    //     const temperatures = newMessage.text;
+    //     const temperatures = newMessage.message;
 
     //     const temperaturesText = temperatures.join(",");
 
     //     // Add the processed message to the chat
     //     setMessages((prevMessages) => [
     //       ...prevMessages,
-    //       { text: temperaturesText, sender: "system", isWeather: true },
+    //       {
+    //         _id: Date.now().toString(),
+    //         timestamp: new Date(),
+    //         message: temperaturesText,
+    //         sender: { name: "system", userId: "system" },
+    //         isJoke: false,
+    //         isWeather: true,
+    //         isOpenAI: false,
+    //         groupId: group?._id || ""
+    //       }
     //     ]);
     //   }
     // });
@@ -117,7 +121,8 @@ export function ChatCard({ userId, group }: ChatCardProps) {
     //   disconnectJokeSocket();
     //   disconnectWeatherSocket();
     // };
-  }, []);
+
+  }, [group]);
 
   React.useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -329,8 +334,8 @@ export function ChatCard({ userId, group }: ChatCardProps) {
                 messages.map((msg, index) => (
                   <MessageCard
                     key={index}
-                    message={msg.text}
-                    isSystem={msg.sender === "system"}
+                    message={msg.message}
+                    isSystem={msg.sender.name === "system"}
                     isWeather={msg.isWeather}
                   />
                 ))

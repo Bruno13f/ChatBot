@@ -1,57 +1,31 @@
-import type { ServerWebSocket } from "bun";
+import { Server } from "socket.io";
+import { createServer } from "http";
 
-interface WebSocketClient {
-  id: string;
-  ws: ServerWebSocket;
-}
-
-class WebSocketServer {
-  private clients: Map<string, WebSocketClient> = new Map();
-  private server: ReturnType<typeof Bun.serve>;
-
-  constructor(port: number = 6000) {
-    this.server = Bun.serve({
-      port,
-      fetch: (req, server) => {
-        if (server.upgrade(req)) {
-          return; // WebSocket upgrade successful
-        }
-        return new Response("Upgrade failed", { status: 400 });
-      },
-      websocket: {
-        open: (ws: ServerWebSocket) => {
-          const clientId = crypto.randomUUID();
-          this.clients.set(clientId, { id: clientId, ws });
-          console.log(`Client connected: ${clientId}. Total clients: ${this.clients.size}`);
-        },
-        message: (ws: ServerWebSocket, message: string | Buffer) => {
-          // Broadcast message to all clients except sender
-          this.broadcast(message, ws);
-        },
-        close: (ws: ServerWebSocket) => {
-          // Find and remove the disconnected client
-          for (const [id, client] of this.clients.entries()) {
-            if (client.ws === ws) {
-              this.clients.delete(id);
-              console.log(`Client disconnected: ${id}. Total clients: ${this.clients.size}`);
-              break;
-            }
-          }
-        }
-      },
-    });
-
-    console.log(`WebSocket server started on ws://localhost:${port}`);
+const httpServer = createServer();
+const io = new Server(httpServer, {
+  cors: {
+    origin: "http://localhost:3000",
+    methods: ["GET", "POST"],
+    credentials: true
   }
+});
 
-  private broadcast(message: string | Buffer, sender: ServerWebSocket) {
-    for (const client of this.clients.values()) {
-      if (client.ws !== sender) {
-        client.ws.send(message);
-      }
-    }
-  }
-}
+io.on("connection", (socket) => {
+  console.log(`Client connected: ${socket.id}. Total clients: ${io.engine.clientsCount}`);
 
-// Start the WebSocket server
-new WebSocketServer();
+  socket.on("disconnect", () => {
+    // Subtract 1 from the count since the client is about to disconnect
+    console.log(`Client disconnected: ${socket.id}. Total clients: ${io.engine.clientsCount}`);
+  });
+
+  // Handle incoming messages
+  socket.on("message", (message) => {
+    // Broadcast to all clients except sender
+    socket.broadcast.emit("message", message);
+  });
+});
+
+const port = 8000;
+httpServer.listen(port, () => {
+  console.log(`Socket.IO server started on http://localhost:${port}`);
+});

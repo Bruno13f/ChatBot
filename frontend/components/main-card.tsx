@@ -34,7 +34,6 @@ export function MainCard({userId}: MainCardProps) {
         try {
           const groups = await getGroupsOfUser(userId);
           setGroups(groups);
-          console.log(groups);
         } catch (error) {
           console.error('Error fetching groups:', error);
         } finally {

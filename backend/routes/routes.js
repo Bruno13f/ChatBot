@@ -33,11 +33,11 @@ router.post("/login", login);
 router.post("/sign-up", signUp);
 router.post("/validate-token", validateToken);
 
-router.get("/messages/:userId", authenticateToken, getMessages);
 router.post("/messages", authenticateToken, postMessage);
 
 router.get("/jokes/:userId", authenticateToken, getJokes);
 
+router.get("/groups/:groupId/messages", authenticateToken, getMessages);
 router.get("/users/:userId/groups", authenticateToken, getGroupsFromUser);
 router.get("/users", authenticateToken, getAllUsers);
 router.get("/users/:userId", authenticateToken, getUserById);

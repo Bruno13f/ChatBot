@@ -21,6 +21,7 @@ import { CardWidget } from "@/components/card-widget";
 import { EditProfile } from "@/components/edit-profile";
 import { ToastSuccess } from "./ui/toast-success";
 import { ToastPromise } from "./ui/toast-promise";
+import { disconnectMiddlewareSocket } from "@/lib/socket-middleware";
 
 interface NavbarProps {
   showLogout: boolean;
@@ -41,6 +42,7 @@ export function Navbar({ showLogout }: NavbarProps) {
         "Logged out successfully!",
         "Failed to log out!"
       );
+      disconnectMiddlewareSocket();
       localStorage.removeItem("token");
       localStorage.removeItem("userId");
       setIsDialogOpen(false);

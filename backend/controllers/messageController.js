@@ -1,30 +1,57 @@
 const Message = require("../models/Message");
 const User = require("../models/User");
+const Group = require("../models/Group");
+
+/**
+ * Transforms a group document into the desired output format
+ * @param {Object} message - The message document from MongoDB
+ * @returns {Object} Formatted message object
+ */
+
+const formatMessage = (message) => ({
+  _id: message._id,
+  timestamp: message.timestamp,
+  message: message.message,
+  sender: {
+    name: message.sender,
+    userId: message.userId
+  },
+  isJoke: message.isJoke, 
+  isWeather: message.isWeather,
+  isOpenAI: message.isOpenAI,
+  groupId: message.groupId,
+});
 
 exports.getMessages = async (req, res) => {
   try {
-    const userId = req.params.userId;
-    if (!userId) {
-      return res.status(400).json({ error: "Missing user id" });
+
+    const groupId = req.params.groupId;
+    console.log("\n🤼 Getting messages for group: ", groupId);
+
+    if (!groupId) {
+      console.log("❌ Missing group id");
+      return res.status(400).json({ error: "Missing group id" });
     }
 
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ error: "User not found" });
+    const group = await Group.findById(groupId);
+    if (!group) {
+      console.log("❌ Group not found");
+      return res.status(404).json({ error: "Group not found" });
     }
 
-    const messages = await Message.find({ userId }).sort({ timestamp: 1 });
-    const formatted = messages.map(
-      ({ message, sender, isJoke, isWeather }) => ({
-        message,
-        sender,
-        isJoke,
-        isWeather,
-      })
-    );
+    const user = req.user;
+    if (!group.members.includes(user._id)) {
+      console.log("❌ User is not a member of the group");
+      return res.status(403).json({ error: "User is not a member of the group" });
+    }
 
+    const messages = await Message.find({ groupId }).sort({ timestamp: 1 });
+
+    const formatted = messages.map(formatMessage);
+    console.log("✅ Messages fetched successfully");
     res.json(formatted);
   } catch (err) {
+    console.log("❌ Failed to fetch messages", err);
     res
       .status(500)
       .json({ error: "Failed to fetch messages", details: err.message });

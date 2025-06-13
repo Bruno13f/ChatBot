@@ -54,6 +54,7 @@ export function GroupInfoCard({
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
   const [infoText, setInfoText] = React.useState("Invite users...");
   const isOwner = group.owner === userId;
+  const isFirstRender = React.useRef(true);
 
   // Function to get initials from a name
   const getInitials = (name: string) => {
@@ -98,7 +99,10 @@ export function GroupInfoCard({
         ToastError("Failed to fetch users");
       }
     }
-    fetchUsers();
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      fetchUsers();
+    }
   }, []);
 
   const handleAddUser = async (userIds: string[]) => {
