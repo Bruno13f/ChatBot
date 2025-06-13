@@ -1,10 +1,47 @@
+import React, { useEffect, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button";
 import { UploadIcon } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { getUserById, updateUser } from "@/services/users";
+import { ToastPromise } from "@/components/ui/toast-promise"; // ajuste o import conforme seu projeto
 
-export function EditProfile() {
+export function EditProfile({ onClose }: { onClose: () => void }) {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const userId = localStorage.getItem("userId");
+    if (!userId) return;
+    getUserById(userId)
+      .then(user => {
+        setName(user.name);
+        setEmail(user.email);
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const userId = localStorage.getItem("userId");
+    if (!userId) return;
+    try {
+      await ToastPromise(
+        updateUser(userId, name, email),
+        "Updating profile...",
+        "Profile updated successfully!",
+        "Failed to update profile."
+      );
+      onClose(); // Fecha o modal após sucesso
+    } catch (err) {
+      // O ToastPromise já mostra o erro
+    }
+  };
+
+  if (loading) return <div>Loading...</div>;
+
     return (
     <div className="flex flex-col mt-4 gap-y-2">
         <div className="flex flex-col items-center gap-2 mb-4">
@@ -21,17 +58,19 @@ export function EditProfile() {
                 Change Photo
             </Button>
         </div>
-        <div className="grid gap-2 px-2">
+        <form className="flex flex-col gap-4" onSubmit={handleSave}>
+          <div className="grid gap-2 px-2">
             <Label htmlFor="name">Name</Label>
-            <Input id="name" type="text" defaultValue="User Name" />
+            <Input id="name" type="text" value={name} onChange={e => setName(e.target.value)} />
           </div>
           <div className="grid gap-2 px-2">
             <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" defaultValue="email@email.com" />
+            <Input id="email" type="email" value={email} onChange={e => setEmail(e.target.value)} />
         </div>
         <div className="flex flex-row items-center justify-center mt-4 pb-2">
-            <Button className="cursor-pointer">Save Changes</Button>
+            <Button className="cursor-pointer" type="submit">Save Changes</Button>
         </div>
+        </form>
     </div>
     );
 }

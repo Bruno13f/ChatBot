@@ -20,7 +20,7 @@ const {
   leaveGroup,
   removeMemberFromGroup,
 } = require("../controllers/groupController");
-const { getAllUsers } = require("../controllers/userController");
+const { getAllUsers, getUserById, updateUser } = require("../controllers/userController");
 const authenticateToken = require("../middleware/auth");
 
 router.post("/login", login);
@@ -34,13 +34,18 @@ router.get("/jokes/:userId", authenticateToken, getJokes);
 
 router.get("/users/:userId/groups", authenticateToken, getGroupsFromUser);
 router.get("/users", authenticateToken, getAllUsers);
+router.get("/users/:userId", authenticateToken, getUserById);
+router.put("/users/:userId", authenticateToken, updateUser);
 
 router.post("/groups", authenticateToken, createGroup);
 router.put("/groups/:groupId", authenticateToken, editGroup);
 router.delete("/groups/:groupId", authenticateToken, deleteGroup);
 router.post("/groups/:groupId/members", authenticateToken, addMemberToGroup);
-router.post("/groups/:groupId/members/:memberId", authenticateToken, removeMemberFromGroup);
+router.post(
+  "/groups/:groupId/members/:memberId",
+  authenticateToken,
+  removeMemberFromGroup
+);
 router.post("/groups/:groupId/leave", authenticateToken, leaveGroup);
-
 
 module.exports = router;
