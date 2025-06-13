@@ -114,3 +114,22 @@ export async function addUserToGroup(groupId: string, userId: string) {
     if (!res.ok) throw new Error(data.message || 'Failed to add user to group.');
     return data.group;
 }
+
+export async function leaveGroup(groupId: string) {
+    if (typeof window === "undefined") return;
+    const token = localStorage.getItem('token');
+    if (!token) {
+        window.location.href = "/login";
+        return;
+    }
+    const res = await fetch(`${BACKEND_URI}/groups/${groupId}/leave`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to leave group.');
+    return true;
+}

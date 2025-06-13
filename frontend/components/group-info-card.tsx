@@ -4,7 +4,7 @@ import toast from 'react-hot-toast';
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Pencil, Trash2, Send } from "lucide-react"
+import { Pencil, Trash2, Send, LogOut } from "lucide-react"
 import { AvatarGroup } from "@/components/ui/avatar-group"
 import { AvatarWithHoverDelete } from "@/components/avatar-with-hover-delete"
 import { GroupActions } from "@/components//group-actions"
@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Combobox } from "@/components/ui/combobox"
 import { Group } from "@/models/group"
-import { deleteGroup, updateGroup, addUserToGroup } from "@/services/groups"
+import { deleteGroup, updateGroup, addUserToGroup, leaveGroup } from "@/services/groups"
 import { getAllUsers } from "@/services/users"
 
 const avatars = [
@@ -97,8 +97,15 @@ export function GroupInfoCard({ group, userId, onGroupDeleted, onGroupUpdated }:
     }
   }
 
-  const handleLeaveGroup = () => {
-    console.log("Leave group!", group._id)
+  const handleLeaveGroup = async () => {
+    try {
+      await leaveGroup(group._id);
+      setIsDialogOpen(false);
+      toast.success('You left the group!');
+      if (onGroupDeleted) onGroupDeleted(group._id);
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to leave group.');
+    }
   }
 
   return (
@@ -111,7 +118,9 @@ export function GroupInfoCard({ group, userId, onGroupDeleted, onGroupUpdated }:
         <h1 className="text-[1rem] font-regular mt-4">{group.name}</h1>
         <h2 className="text-sm font-regular text-muted-foreground">{group.members.length} members</h2>
         <div className="flex flex-row gap-2 mt-4">
-          <Button variant="outline" className="cursor-pointer" onClick={() => setShowEditGroup(true)} disabled={!isOwner}><Pencil/>Edit</Button>
+          {isOwner && (
+            <Button variant="outline" className="cursor-pointer" onClick={() => setShowEditGroup(true)}><Pencil/>Edit</Button>
+          )}
           <AlertDialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <AlertDialogTrigger asChild>
               <Button
@@ -120,7 +129,7 @@ export function GroupInfoCard({ group, userId, onGroupDeleted, onGroupUpdated }:
                 title={isOwner ? "Delete group" : "Leave group"}
                 className="cursor-pointer"
               >
-                {isOwner ? <Trash2/> : <span>Leave</span>}
+                {isOwner ? <Trash2/> : <LogOut className="mr-2" />}
                 {isOwner ? "Delete" : "Leave"}
               </Button>
             </AlertDialogTrigger>

@@ -227,3 +227,42 @@ exports.addMemberToGroup = async (req, res) => {
       .json({ error: "Failed to add user to group", details: err.message });
   }
 };
+
+/**
+ * Leave group
+ */
+exports.leaveGroup = async (req, res) => {
+  const groupId = req.params.groupId;
+  const user = req.user;
+
+  if (!groupId) {
+    return res.status(400).json({ message: "Missing group id" });
+  }
+
+  try {
+    const group = await Group.findById(groupId);
+    if (!group) {
+      return res.status(404).json({ message: "Group not found" });
+    }
+    // Owner não pode sair do próprio grupo
+    if (group.owner.toString() === user._id.toString()) {
+      return res.status(400).json({
+        message:
+          "Owner cannot leave their own group. Delete the group instead.",
+      });
+    }
+    // Remove user do grupo
+    group.members = group.members.filter(
+      (m) => m.toString() !== user._id.toString()
+    );
+    await group.save();
+    // Remove grupo da lista do usuário
+    user.groups = user.groups.filter((g) => g.toString() !== groupId);
+    await user.save();
+    res.json({ success: true, message: "Left group successfully" });
+  } catch (err) {
+    res
+      .status(500)
+      .json({ error: "Failed to leave group", details: err.message });
+  }
+};
