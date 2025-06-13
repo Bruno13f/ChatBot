@@ -17,6 +17,7 @@ const {
   editGroup,
   deleteGroup,
 } = require("../controllers/groupController");
+const { getAllUsers } = require("../controllers/userController");
 const authenticateToken = require("../middleware/auth");
 
 router.post("/login", login);
@@ -32,5 +33,6 @@ router.get("/users/:userId/groups", authenticateToken, getGroupsFromUser);
 router.post("/groups", authenticateToken, createGroup);
 router.put("/groups/:groupId", authenticateToken, editGroup);
 router.delete("/groups/:groupId", authenticateToken, deleteGroup);
+router.get("/users", authenticateToken, getAllUsers);
 
 module.exports = router;

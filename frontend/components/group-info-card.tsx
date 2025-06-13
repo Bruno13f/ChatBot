@@ -24,6 +24,7 @@ import {
 import { Combobox } from "@/components/ui/combobox"
 import { Group } from "@/models/group"
 import { deleteGroup, updateGroup } from "@/services/groups"
+import { getAllUsers } from "@/services/users"
 
 const avatars = [
   { img: "https://github.com/shadcn.png", fallback: "CN", color: "bg-indigo-500" },
@@ -53,8 +54,25 @@ interface GroupInfoCardProps {
 export function GroupInfoCard({ group, userId, onGroupDeleted, onGroupUpdated }: GroupInfoCardProps) {
   let [showEditGroup, setShowEditGroup] = React.useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false)
-
+  const [allUsers, setAllUsers] = useState<{ _id: string; name: string }[]>([]);
   const isOwner = group.owner === userId;
+
+  React.useEffect(() => {
+    async function fetchUsers() {
+      try {
+        const users = await getAllUsers();
+        setAllUsers(users);
+      } catch (err) {
+        toast.error("Failed to fetch users");
+      }
+    }
+    fetchUsers();
+  }, []);
+
+  const handleAddUser = async (userId: string) => {
+    // TODO: Implementar chamada para adicionar usuário ao grupo
+    toast.success('User added to group! (mock)');
+  };
 
   const handleDeleteGroup = async () => {
     try {
@@ -131,7 +149,11 @@ export function GroupInfoCard({ group, userId, onGroupDeleted, onGroupUpdated }:
         )}
 
         <div className="flex flex-row justify-center items-center pl-8 pr-4 mt-10 gap-x-2"> 
-          <Combobox/>
+          <Combobox
+            groupMembers={group.members}
+            users={allUsers}
+            onAddUser={handleAddUser}
+          />
           <Button size={"icon"} className="cursor-pointer bg-green-600 hover:bg-green-700">
             <Send className="text-white"/>
           </Button>

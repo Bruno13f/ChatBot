@@ -18,78 +18,65 @@ import React from "react"
 import { Button } from "@/components/ui/button"
 import { Check, ChevronsUpDown } from "lucide-react"
 
-const users = [
-  {
-    id: "userId",
-    name: "Next.js",
-  },
-  {
-    id: "sveltekit",
-    name: "SvelteKit",
-  },
-  {
-    id: "nuxt.js",
-    name: "Nuxt.js",
-  },
-  {
-    id: "remix",
-    name: "Remix",
-  },
-  {
-    id: "astro",
-    name: "Astro",
-  },
-]
+interface ComboboxProps {
+  groupMembers: { _id: string; name: string }[];
+  users: { _id: string; name: string }[];
+  onAddUser: (userId: string) => void;
+}
 
+export function Combobox({ groupMembers, users, onAddUser }: ComboboxProps) {
+  const [open, setOpen] = React.useState(false);
+  const [id, setId] = React.useState("");
 
-export function Combobox(){
+  // Filtra usuários que não estão no grupo
+  const availableUsers = users.filter(
+    (user) => !groupMembers.some((member) => member._id === user._id)
+  );
 
-    const [open, setOpen] = React.useState(false)
-    const [id, setId] = React.useState("")
-
-    return (
+  return (
     <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
-          <Button
-            variant="outline"
-            role="combobox"
-            aria-expanded={open}
-            className="justify-between"
-          >
-            {id
-              ? users.find((user) => user.id === id)?.name
-              : "Invite users..."}
-            <ChevronsUpDown className="opacity-50" />
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-[200px] p-0">
-          <Command>
-            <CommandInput placeholder="Search for the user..." className="h-9" />
-            <CommandList>
-              <CommandEmpty>No user found.</CommandEmpty>
-              <CommandGroup>
-                {users.map((user) => (
-                  <CommandItem
-                    key={user.id}
-                    value={user.id}
-                    onSelect={(currentId) => {
-                      setId(currentId === id ? "" : currentId)
-                      setOpen(false)
-                    }}
-                  >
-                    {user.name}
-                    <Check
-                      className={cn(
-                        "ml-auto",
-                        id === user.id ? "opacity-100" : "opacity-0"
-                      )}
-                    />
-                  </CommandItem>
-                ))}
-              </CommandGroup>
-            </CommandList>
-          </Command>
-        </PopoverContent>
-      </Popover>
-    );
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className="justify-between"
+        >
+          {id
+            ? availableUsers.find((user) => user._id === id)?.name
+            : "Invite users..."}
+          <ChevronsUpDown className="opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[200px] p-0">
+        <Command>
+          <CommandInput placeholder="Search for the user..." className="h-9" />
+          <CommandList>
+            <CommandEmpty>No user found.</CommandEmpty>
+            <CommandGroup>
+              {availableUsers.map((user) => (
+                <CommandItem
+                  key={user._id}
+                  value={user._id}
+                  onSelect={(currentId) => {
+                    setId(currentId === id ? "" : currentId);
+                    setOpen(false);
+                    if (currentId !== id) onAddUser(currentId);
+                  }}
+                >
+                  {user.name}
+                  <Check
+                    className={cn(
+                      "ml-auto",
+                      id === user._id ? "opacity-100" : "opacity-0"
+                    )}
+                  />
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
 }
