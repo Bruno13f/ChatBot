@@ -28,24 +28,6 @@ import { ToastSuccess } from "@/components/ui/toast-success"
 import { ToastError } from "@/components/ui/toast-error"
 import { ToastPromise } from "./ui/toast-promise"
 
-const avatars = [
-  { img: "https://github.com/shadcn.png", fallback: "CN", color: "bg-indigo-500" },
-  { img: "", fallback: "CN", color: "bg-green-600" },
-  { img: "", fallback: "AB", color: "bg-red-500" },
-  { img: "", fallback: "VK", color: "bg-indigo-500" },
-  { img: "", fallback: "RS", color: "bg-orange-500" },
-  { img: "https://github.com/shadcn.png", fallback: "CN", color: "bg-indigo-500" },
-  { img: "", fallback: "CN", color: "bg-green-600" },
-  { img: "", fallback: "AB", color: "bg-red-500" },
-  { img: "", fallback: "VK", color: "bg-indigo-500" },
-  { img: "", fallback: "RS", color: "bg-orange-500" },
-  { img: "https://github.com/shadcn.png", fallback: "CN", color: "bg-indigo-500" },
-  { img: "", fallback: "CN", color: "bg-green-600" },
-  { img: "", fallback: "AB", color: "bg-red-500" },
-  { img: "", fallback: "VK", color: "bg-indigo-500" },
-  { img: "", fallback: "RS", color: "bg-orange-500" },
-];
-
 interface GroupInfoCardProps {
   group: Group;
   userId: string;
@@ -60,6 +42,32 @@ export function GroupInfoCard({ group, userId, onGroupDeleted, onGroupUpdated }:
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
   const [infoText, setInfoText] = React.useState("Invite users...");
   const isOwner = group.owner === userId;
+
+  // Function to get initials from a name
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(word => word[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
+  // Function to get a random color for the avatar background
+  const getRandomColor = (id: string) => {
+    const colors = ['bg-indigo-500', 'bg-green-600', 'bg-red-500', 'bg-orange-500', 'bg-purple-500'];
+    const index = id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % colors.length;
+    return colors[index];
+  };
+
+  // Sort members to put the logged-in user first
+  const sortedMembers = React.useMemo(() => {
+    return [...group.members].sort((a, b) => {
+      if (a._id === userId) return 1;
+      if (b._id === userId) return -1;
+      return 0;
+    });
+  }, [group.members, userId]);
 
   React.useEffect(() => {
     async function fetchUsers() {
@@ -199,13 +207,13 @@ export function GroupInfoCard({ group, userId, onGroupDeleted, onGroupUpdated }:
         <div className="flex flex-col items-start w-full mt-8">
           <h1 className="text-[1rem] font-regular">Members</h1>
           <AvatarGroup className="flex flex-wrap flex-row items-center gap-3 mt-3 pl-2" max={0}>
-            {avatars.map((a, i) => (
-              <AvatarWithHoverDelete key={i}>
+            {sortedMembers.map((member) => (
+              <AvatarWithHoverDelete key={member._id} name={member.name}>
                 <Avatar className="cursor-pointer">
-                  {a.img ? (
-                    <AvatarImage src={a.img} alt={a.fallback} />
-                  ) : null}
-                  <AvatarFallback className={`${a.color} text-white`}>{a.fallback}</AvatarFallback>
+                  <AvatarImage src={`/api/users/${member._id}/avatar`} alt={member.name} />
+                  <AvatarFallback className={`${getRandomColor(member._id)} text-white`}>
+                    {getInitials(member.name)}
+                  </AvatarFallback>
                 </Avatar>
               </AvatarWithHoverDelete>
             ))}

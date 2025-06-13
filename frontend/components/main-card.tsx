@@ -12,7 +12,7 @@ import { GroupsCard } from "@/components/groups-card"
 import { GroupInfoCard } from "@/components/group-info-card"
 import { CardWidget } from "./card-widget"
 import { useEffect } from "react"
-import { getGroups } from "@/services/groups"
+import { getGroupsOfUser } from "@/services/groups"
 import { Group } from "@/models/group"
 import { Loader2 } from "lucide-react"
 
@@ -32,7 +32,7 @@ export function MainCard({userId}: MainCardProps) {
       isFirstRender.current = false;
       const fetchGroups = async () => {
         try {
-          const groups = await getGroups();
+          const groups = await getGroupsOfUser(userId);
           setGroups(groups);
           console.log(groups);
         } catch (error) {

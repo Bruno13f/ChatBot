@@ -72,7 +72,7 @@ export function GroupsCard({ onInfoClick, groups, onGroupClick, selectedGroupId 
             </div>
           ) : (
             <ScrollArea className="flex-1 md:max-h-140 lg:max-h-160 w-full">
-            <div className="flex flex-row md:flex-col lg:flex-col gap-2 w-full">
+            <div className="flex flex-row md:flex-col lg:flex-col gap-2 w-[50%] md:w-full lg:w-full">
               {groups.map((group) => (
                 <div key={group._id} onClick={() => {
                   onGroupClick?.(group);

@@ -1,14 +1,13 @@
 const BACKEND_URI = process.env.NEXT_PUBLIC_BACKEND_URI;
 import { Group } from "@/models/group";
 
-export async function getGroups() {
+export async function getGroupsOfUser(userId: string) {
     // Only access localStorage on the client
     if (typeof window === "undefined") return; // SSR guard
 
     const token = localStorage.getItem('token');
-    const userId = localStorage.getItem('userId');
 
-    if (!token || !userId) {
+    if (!token) {
         window.location.href = "/login";
         return;
     }
