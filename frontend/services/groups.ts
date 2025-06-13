@@ -1,4 +1,5 @@
 const BACKEND_URI = process.env.NEXT_PUBLIC_BACKEND_URI;
+import { Group } from "@/models/group";
 
 export async function getGroups() {
     // Only access localStorage on the client
@@ -95,23 +96,22 @@ export async function deleteGroup(groupId: string) {
     return true;
 }
 
-export async function addUserToGroup(groupId: string, userId: string) {
-    if (typeof window === "undefined") return;
+export const addUsersToGroup = async (groupId: string, userIds: string[]): Promise<Group> => {
+    if (typeof window === "undefined") throw new Error("Cannot add users to group on server side");
     const token = localStorage.getItem('token');
     if (!token) {
-        window.location.href = "/login";
-        return;
+        throw new Error("No token found");
     }
-    const res = await fetch(`${BACKEND_URI}/groups/${groupId}/add-member`, {
+    const res = await fetch(`${BACKEND_URI}/groups/${groupId}/members`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({ userId }),
+        body: JSON.stringify({ userIds }),
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.message || 'Failed to add user to group.');
+    if (!res.ok) throw new Error(data.message || 'Failed to add users to group.');
     return data.group;
 }
 

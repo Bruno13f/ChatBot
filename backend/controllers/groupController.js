@@ -193,18 +193,18 @@ exports.deleteGroup = async (req, res) => {
 };
 
 /**
- * Add member to group
+ * Add members to group
  */
 exports.addMemberToGroup = async (req, res) => {
   const groupId = req.params.groupId;
-  const { userId } = req.body;
+  const { userIds } = req.body;
   const user = req.user;
 
-  console.log("\n🤼 Adding member to group with id: ", groupId);
+  console.log("\n🤼 Adding members to group with id: ", groupId);
 
-  if (!groupId || !userId) {
-    console.log("❌ Missing groupId or userId");
-    return res.status(400).json({ message: "Missing groupId or userId" });
+  if (!groupId || !userIds) {
+    console.log("❌ Missing groupId or userIds array");
+    return res.status(400).json({ message: "Missing groupId or userIds array" });
   }
 
   try {
@@ -213,39 +213,44 @@ exports.addMemberToGroup = async (req, res) => {
       console.log("❌ Group not found");
       return res.status(404).json({ message: "Group not found" });
     }
-    // Só owner pode adicionar membros
+    // Only owner can add members
     if (group.owner.toString() !== user._id.toString()) {
       console.log("❌ Only the group owner can add members.");
       return res
         .status(403)
         .json({ message: "Only the group owner can add members." });
     }
-    // Não adicionar duplicados
-    if (group.members.includes(userId)) {
-      console.log("❌ User is already a member of the group.");
+
+    // Filter out users that are already members
+    const newMembers = userIds.filter(userId => !group.members.includes(userId));
+    
+    if (newMembers.length === 0) {
+      console.log("❌ All users are already members of the group.");
       return res
         .status(400)
-        .json({ message: "User is already a member of the group." });
+        .json({ message: "All users are already members of the group." });
     }
 
-    group.members.push(userId);
+    // Add new members to the group
+    group.members.push(...newMembers);
     await group.save();
-    // Popula membros para resposta
+
+    // Populate members for response
     const populatedGroup = await Group.findById(groupId).populate(
       "members",
       "_id name"
     );
-    console.log("✅ User added to group successfully");
+    console.log("✅ Users added to group successfully");
     res.json({
       success: true,
-      message: "User added to group successfully",
+      message: "Users added to group successfully",
       group: formatGroup(populatedGroup),
     });
   } catch (err) {
-    console.log("❌ Error adding user to group:", err);
+    console.log("❌ Error adding users to group:", err);
     res
       .status(500)
-      .json({ error: "Failed to add user to group", details: err.message });
+      .json({ error: "Failed to add users to group", details: err.message });
   }
 };
 

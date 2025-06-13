@@ -21,15 +21,15 @@ import { Check, ChevronsUpDown } from "lucide-react"
 interface ComboboxProps {
   groupMembers: { _id: string; name: string }[];
   users: { _id: string; name: string }[];
-  onAddUser: (userId: string) => void;
+  onAddUser: (userIds: string[]) => void;
   infoText: string;
 }
 
 export function Combobox({ groupMembers, users, onAddUser, infoText }: ComboboxProps) {
   const [open, setOpen] = React.useState(false);
-  const [id, setId] = React.useState("");
+  const [selectedIds, setSelectedIds] = React.useState<string[]>([]);
 
-  // Filtra usuários que não estão no grupo
+  // Filter users that are not in the group
   const availableUsers = users.filter(
     (user) => !groupMembers.some((member) => member._id === user._id)
   );
@@ -41,7 +41,7 @@ export function Combobox({ groupMembers, users, onAddUser, infoText }: ComboboxP
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className="justify-between w-[140px]"
+          className="justify-between w-[160px]"
         >
           {infoText}
           <ChevronsUpDown className="opacity-50" />
@@ -49,32 +49,28 @@ export function Combobox({ groupMembers, users, onAddUser, infoText }: ComboboxP
       </PopoverTrigger>
       <PopoverContent className="w-[200px] p-0">
         <Command>
-          <CommandInput placeholder="Search for the user..." className="h-9" />
+          <CommandInput placeholder="Search for users..." className="h-9" />
           <CommandList>
-            <CommandEmpty>No user found.</CommandEmpty>
+            <CommandEmpty>No users found.</CommandEmpty>
             <CommandGroup>
               {availableUsers.map((user) => (
                 <CommandItem
                   key={user._id}
                   value={user._id}
                   onSelect={(currentId) => {
-                    if (currentId === id) {
-                      // If clicking the same user, deselect
-                      setId("");
-                      onAddUser(""); // Pass empty string to indicate deselection
-                    } else {
-                      // If selecting a different user
-                      setId(currentId);
-                      onAddUser(currentId);
-                    }
-                    setOpen(false);
+                    const newSelectedIds = selectedIds.includes(currentId)
+                      ? selectedIds.filter(id => id !== currentId)
+                      : [...selectedIds, currentId];
+                    
+                    setSelectedIds(newSelectedIds);
+                    onAddUser(newSelectedIds);
                   }}
                 >
                   {user.name}
                   <Check
                     className={cn(
                       "ml-auto",
-                      id === user._id ? "opacity-100" : "opacity-0"
+                      selectedIds.includes(user._id) ? "opacity-100" : "opacity-0"
                     )}
                   />
                 </CommandItem>

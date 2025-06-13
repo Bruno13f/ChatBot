@@ -18,6 +18,7 @@ import toast, { Toaster } from 'react-hot-toast';
 import { login, signup } from "@/services/auth"
 import { ToastSuccess } from "@/components/ui/toast-success"
 import { ToastError } from "@/components/ui/toast-error"
+import { ToastPromise } from "./ui/toast-promise"
 
 export function SignUpForm({
   className,
@@ -88,20 +89,7 @@ export function SignUpForm({
       
       ToastSuccess('Account created successfully!');
 
-      await toast.promise( 
-        logginIn(email, password), {
-          loading: 'Logging in...',
-          success: <b>Logged in successfully!</b>,
-          error: <b>Failed to log in!</b>,
-      },{
-        style: {
-          borderRadius: '6px',
-          background: 'var(--card)',
-          padding: '10px',
-          border: '1px solid var(--border)',
-          color: 'var(--text)',
-        },
-      })
+      ToastPromise(logginIn(email, password), 'Logging in...', 'Logged in successfully!', 'Failed to log in!');
 
     } catch (error) {
       ToastError((error instanceof Error ? error.message : "Something went wrong."));

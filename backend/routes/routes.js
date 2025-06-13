@@ -37,7 +37,7 @@ router.get("/users", authenticateToken, getAllUsers);
 router.post("/groups", authenticateToken, createGroup);
 router.put("/groups/:groupId", authenticateToken, editGroup);
 router.delete("/groups/:groupId", authenticateToken, deleteGroup);
-router.post("/groups/:groupId/add-member", authenticateToken, addMemberToGroup);
+router.post("/groups/:groupId/members", authenticateToken, addMemberToGroup);
 router.post("/groups/:groupId/leave", authenticateToken, leaveGroup);
 
 

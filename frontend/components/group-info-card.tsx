@@ -22,10 +22,11 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Combobox } from "@/components/ui/combobox"
 import { Group } from "@/models/group"
-import { deleteGroup, updateGroup, addUserToGroup, leaveGroup } from "@/services/groups"
+import { deleteGroup, updateGroup, addUsersToGroup, leaveGroup } from "@/services/groups"
 import { getAllUsers } from "@/services/users"
 import { ToastSuccess } from "@/components/ui/toast-success"
 import { ToastError } from "@/components/ui/toast-error"
+import { ToastPromise } from "./ui/toast-promise"
 
 const avatars = [
   { img: "https://github.com/shadcn.png", fallback: "CN", color: "bg-indigo-500" },
@@ -56,7 +57,7 @@ export function GroupInfoCard({ group, userId, onGroupDeleted, onGroupUpdated }:
   let [showEditGroup, setShowEditGroup] = React.useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [allUsers, setAllUsers] = useState<{ _id: string; name: string }[]>([]);
-  const [selectedUserId, setSelectedUserId] = useState<string>("");
+  const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
   const [infoText, setInfoText] = React.useState("Invite users...");
   const isOwner = group.owner === userId;
 
@@ -72,33 +73,27 @@ export function GroupInfoCard({ group, userId, onGroupDeleted, onGroupUpdated }:
     fetchUsers();
   }, []);
 
-  const handleAddUser = async (userId: string) => {
-    if (!userId) {
-      // Handle deselection
-      setSelectedUserId("");
+  const handleAddUser = async (userIds: string[]) => {
+    setSelectedUserIds(userIds);
+    if (userIds.length === 0) {
       setInfoText("Invite users...");
-      return;
-    }
-
-    if (selectedUserId === userId) {
-      setSelectedUserId("");
-      setInfoText("Invite users...");
+    } else if (userIds.length === 1) {
+      setInfoText(`1 user selected`);
     } else {
-      setSelectedUserId(userId);
-      setInfoText(allUsers.find((user) => user._id === userId)?.name || "");
+      setInfoText(`${userIds.length} users selected`);
     }
   };
 
   const handleAddUserButton = async () => {
-    if (!selectedUserId) return;
+    if (selectedUserIds.length === 0) return;
+    ToastPromise(addUsersToGroup(group._id, selectedUserIds), 'Adding users...', 'Users added to group!', 'Failed to add users to group.'); 
     try {
-      const updatedGroup = await addUserToGroup(group._id, selectedUserId);
-      ToastSuccess('User added to group!');
-      setSelectedUserId("");
-      setInfoText("Invite users...");
+      const updatedGroup = await addUsersToGroup(group._id, selectedUserIds);
+      setSelectedUserIds([]);
       if (onGroupUpdated) onGroupUpdated(updatedGroup);
+      setInfoText("Invite users...");
     } catch (err: any) {
-      ToastError(err.message || 'Failed to add user to group.');
+      ToastError(err.message || 'Failed to add users to group.');
     }
   };
 
@@ -197,7 +192,7 @@ export function GroupInfoCard({ group, userId, onGroupDeleted, onGroupUpdated }:
               size={"icon"}
               className="cursor-pointer bg-green-600 hover:bg-green-700"
               onClick={handleAddUserButton}
-              disabled={!selectedUserId}
+              disabled={selectedUserIds.length === 0}
             >
               <Send className="text-white"/>
             </Button>
