@@ -110,17 +110,22 @@ exports.editGroup = async (req, res) => {
   const { name, picture } = req.body;
   const user = req.user;
 
+  console.log("\n🤼 Editing group with id: ", groupId);
+
   if (!groupId) {
+    console.log("❌ Missing group id");
     return res.status(400).json({ message: "Missing group id" });
   }
 
   try {
     const group = await Group.findById(groupId);
     if (!group) {
+      console.log("❌ Group not found");
       return res.status(404).json({ message: "Group not found" });
     }
     // Only owner can edit
     if (group.owner.toString() !== user._id.toString()) {
+      console.log("❌ Only the group owner can edit the group.");
       return res
         .status(403)
         .json({ message: "Only the group owner can edit the group." });
@@ -132,6 +137,7 @@ exports.editGroup = async (req, res) => {
       "members",
       "_id name"
     );
+    console.log("✅ Group updated successfully");
     res.json({
       success: true,
       message: "Group updated successfully",
@@ -152,21 +158,27 @@ exports.deleteGroup = async (req, res) => {
   const groupId = req.params.groupId;
   const user = req.user;
 
+  console.log("\n🤼 Deleting group with id: ", groupId);
+
   if (!groupId) {
+    console.log("❌ Missing group id");
     return res.status(400).json({ message: "Missing group id" });
   }
 
   try {
     const group = await Group.findById(groupId);
     if (!group) {
+      console.log("❌ Group not found");
       return res.status(404).json({ message: "Group not found" });
     }
     // Only owner can delete
     if (group.owner.toString() !== user._id.toString()) {
+      console.log("❌ Only the group owner can delete the group.");
       return res
         .status(403)
         .json({ message: "Only the group owner can delete the group." });
     }
+
     await Group.deleteOne({ _id: groupId });
     user.groups = user.groups.filter((g) => g.toString() !== groupId);
     await user.save();
@@ -188,27 +200,34 @@ exports.addMemberToGroup = async (req, res) => {
   const { userId } = req.body;
   const user = req.user;
 
+  console.log("\n🤼 Adding member to group with id: ", groupId);
+
   if (!groupId || !userId) {
+    console.log("❌ Missing groupId or userId");
     return res.status(400).json({ message: "Missing groupId or userId" });
   }
 
   try {
     const group = await Group.findById(groupId);
     if (!group) {
+      console.log("❌ Group not found");
       return res.status(404).json({ message: "Group not found" });
     }
     // Só owner pode adicionar membros
     if (group.owner.toString() !== user._id.toString()) {
+      console.log("❌ Only the group owner can add members.");
       return res
         .status(403)
         .json({ message: "Only the group owner can add members." });
     }
     // Não adicionar duplicados
     if (group.members.includes(userId)) {
+      console.log("❌ User is already a member of the group.");
       return res
         .status(400)
         .json({ message: "User is already a member of the group." });
     }
+
     group.members.push(userId);
     await group.save();
     // Popula membros para resposta
@@ -216,12 +235,14 @@ exports.addMemberToGroup = async (req, res) => {
       "members",
       "_id name"
     );
+    console.log("✅ User added to group successfully");
     res.json({
       success: true,
       message: "User added to group successfully",
       group: formatGroup(populatedGroup),
     });
   } catch (err) {
+    console.log("❌ Error adding user to group:", err);
     res
       .status(500)
       .json({ error: "Failed to add user to group", details: err.message });
@@ -235,17 +256,22 @@ exports.leaveGroup = async (req, res) => {
   const groupId = req.params.groupId;
   const user = req.user;
 
+  console.log("\n🤼 Leaving group with id: ", groupId);
+
   if (!groupId) {
+    console.log("❌ Missing group id");
     return res.status(400).json({ message: "Missing group id" });
   }
 
   try {
     const group = await Group.findById(groupId);
     if (!group) {
+      console.log("❌ Group not found");
       return res.status(404).json({ message: "Group not found" });
     }
     // Owner não pode sair do próprio grupo
     if (group.owner.toString() === user._id.toString()) {
+      console.log("❌ Owner cannot leave their own group. Delete the group instead.");
       return res.status(400).json({
         message:
           "Owner cannot leave their own group. Delete the group instead.",
@@ -259,8 +285,10 @@ exports.leaveGroup = async (req, res) => {
     // Remove grupo da lista do usuário
     user.groups = user.groups.filter((g) => g.toString() !== groupId);
     await user.save();
+    console.log("✅ Left group successfully");
     res.json({ success: true, message: "Left group successfully" });
   } catch (err) {
+    console.log("❌ Error leaving group:", err);
     res
       .status(500)
       .json({ error: "Failed to leave group", details: err.message });

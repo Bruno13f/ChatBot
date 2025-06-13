@@ -32,11 +32,13 @@ router.post("/messages", authenticateToken, postMessage);
 router.get("/jokes/:userId", authenticateToken, getJokes);
 
 router.get("/users/:userId/groups", authenticateToken, getGroupsFromUser);
+router.get("/users", authenticateToken, getAllUsers);
+
 router.post("/groups", authenticateToken, createGroup);
 router.put("/groups/:groupId", authenticateToken, editGroup);
 router.delete("/groups/:groupId", authenticateToken, deleteGroup);
 router.post("/groups/:groupId/add-member", authenticateToken, addMemberToGroup);
 router.post("/groups/:groupId/leave", authenticateToken, leaveGroup);
-router.get("/users", authenticateToken, getAllUsers);
+
 
 module.exports = router;
