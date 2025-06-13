@@ -36,7 +36,6 @@ export function ChatCard({ userId, group }: ChatCardProps) {
   const [fetching, setFetching] = React.useState(true);
   const messagesEndRef = React.useRef<HTMLDivElement | null>(null);
   const validDays = ["1", "3", "7", "14", "16"];
-  console.log("userId", userId);
 
   const noGroupSelected = !group;
 
