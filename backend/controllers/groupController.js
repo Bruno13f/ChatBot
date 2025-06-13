@@ -64,9 +64,12 @@ exports.createGroup = async (req, res) => {
     return res.status(400).json({ message: "Name of group is required" });
   }
 
+  const user = req.user;
   const existingGroup = await Group.findOne({
     name: { $regex: `^${name}$`, $options: "i" },
+    owner: user._id
   });
+
   if (existingGroup) {
     console.log("❌ A group with this name already exists.");
     return res
@@ -74,7 +77,6 @@ exports.createGroup = async (req, res) => {
       .json({ message: "A group with this name already exists." });
   }
 
-  const user = req.user;
   try {
     const group = await new Group({
       name,

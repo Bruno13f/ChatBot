@@ -146,6 +146,7 @@ export function ChatCard({ user, group }: ChatCardProps) {
 
     try {
       const messageTrim = message.trim().toLowerCase();
+      const middlewareSocket = getMiddlewareSocket();
 
       const success = await saveMessageToAPI(message, user.name);
 
@@ -172,8 +173,16 @@ export function ChatCard({ user, group }: ChatCardProps) {
         return;
       }
 
-      const parts = messageTrim.split(" ");
+      if (messageTrim.startsWith("!") && middlewareSocket) {
+        middlewareSocket.emit("message", {
+          text: message,
+          sender: user.name,
+          userId: user._id,
+          groupId: group?._id,
+        });
+      }
 
+      // const parts = messageTrim.split(" ");
       // if (parts[0] === "!joke") {
       //   const validCategories = [
       //     "programming",
