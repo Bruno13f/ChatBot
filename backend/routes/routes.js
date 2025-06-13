@@ -16,6 +16,7 @@ const {
   getGroupsFromUser,
   editGroup,
   deleteGroup,
+  deleteGroupPicture,
   addMemberToGroup,
   leaveGroup,
   removeMemberFromGroup,
@@ -48,8 +49,18 @@ router.put(
 );
 
 router.post("/groups", authenticateToken, createGroup);
-router.put("/groups/:groupId", authenticateToken, editGroup);
+router.put(
+  "/groups/:groupId",
+  authenticateToken,
+  upload.single("groupPicture"),
+  editGroup
+);
 router.delete("/groups/:groupId", authenticateToken, deleteGroup);
+router.delete(
+  "/groups/:groupId/picture",
+  authenticateToken,
+  deleteGroupPicture
+);
 router.post("/groups/:groupId/members", authenticateToken, addMemberToGroup);
 router.post(
   "/groups/:groupId/members/:memberId",

@@ -13,7 +13,7 @@ const blobServiceClient = new BlobServiceClient(azureUrl);
 const containerName = "images";
 const containerClient = blobServiceClient.getContainerClient(containerName);
 
-// Upload the file
+// Upload profile picture
 async function uploadProfilePic(userId, fileBuffer, fileName, mimeType) {
   try {
     const blobName = `profile-pictures/${userId}_${Date.now()}_${fileName}`;
@@ -28,8 +28,28 @@ async function uploadProfilePic(userId, fileBuffer, fileName, mimeType) {
 
     return blockBlobClient.url;
   } catch (error) {
-    console.error("Error uploading to Azure:", error);
-    throw new Error("Failed to upload image to Azure Blob Storage");
+    console.error("Error uploading profile picture to Azure:", error);
+    throw new Error("Failed to upload profile picture to Azure Blob Storage");
+  }
+}
+
+// Upload group picture
+async function uploadGroupPic(groupId, fileBuffer, fileName, mimeType) {
+  try {
+    const blobName = `group-pictures/${groupId}_${Date.now()}_${fileName}`;
+    const blockBlobClient = containerClient.getBlockBlobClient(blobName);
+
+    await blockBlobClient.uploadData(fileBuffer, {
+      blobHTTPHeaders: {
+        blobContentType: mimeType,
+        blobCacheControl: "public, max-age=31536000", // Cache for 1 year
+      },
+    });
+
+    return blockBlobClient.url;
+  } catch (error) {
+    console.error("Error uploading group picture to Azure:", error);
+    throw new Error("Failed to upload group picture to Azure Blob Storage");
   }
 }
 
@@ -102,7 +122,78 @@ async function deleteProfilePic(photoUrl) {
   }
 }
 
+// Delete group picture from Azure Blob Storage
+async function deleteGroupPic(photoUrl) {
+  try {
+    console.log(`🗑️ Attempting to delete group photo: ${photoUrl}`);
+
+    // Extract blob name from URL
+    const url = new URL(photoUrl);
+    let pathname = url.pathname;
+
+    console.log(`🔍 Original pathname: ${pathname}`);
+
+    // Remove leading slash and container name
+    if (pathname.startsWith("/")) {
+      pathname = pathname.substring(1); // Remove leading slash
+    }
+
+    // Remove container name (images/) from the beginning
+    if (pathname.startsWith(`${containerName}/`)) {
+      pathname = pathname.substring(containerName.length + 1);
+    }
+
+    // Handle the duplicate "images/" case
+    if (pathname.startsWith(`${containerName}/`)) {
+      pathname = pathname.substring(containerName.length + 1);
+    }
+
+    const blobName = pathname;
+    console.log(`🔍 Final blob name: ${blobName}`);
+
+    if (!blobName || !blobName.includes("group-pictures/")) {
+      throw new Error(
+        `Invalid group photo URL format. Expected group-pictures path, got: ${blobName}`
+      );
+    }
+
+    const blockBlobClient = containerClient.getBlockBlobClient(blobName);
+
+    // Check if blob exists before trying to delete
+    const exists = await blockBlobClient.exists();
+    if (!exists) {
+      console.log(`⚠️ Group blob does not exist: ${blobName}`);
+      return {
+        success: true,
+        message: "Group file was already deleted or does not exist",
+      };
+    }
+
+    // Delete the blob
+    await blockBlobClient.delete();
+
+    console.log(`✅ Successfully deleted group photo: ${blobName}`);
+    return { success: true, message: "Group photo deleted successfully" };
+  } catch (error) {
+    console.error("❌ Error deleting group photo from Azure:", error);
+
+    // Don't throw error if blob doesn't exist - consider it already deleted
+    if (error.statusCode === 404) {
+      console.log(
+        `⚠️ Group blob not found (404), considering it already deleted`
+      );
+      return { success: true, message: "Group file was already deleted" };
+    }
+
+    throw new Error(
+      `Failed to delete group image from Azure Blob Storage: ${error.message}`
+    );
+  }
+}
+
 module.exports = {
   uploadProfilePic,
+  uploadGroupPic,
   deleteProfilePic,
+  deleteGroupPic,
 };

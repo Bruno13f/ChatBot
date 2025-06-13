@@ -1,5 +1,6 @@
 const Group = require("../models/Group");
 const User = require("../models/User");
+const { uploadGroupPic, deleteGroupPic } = require("../config/azure");
 
 /**
  * Transforms a group document into the desired output format
@@ -15,7 +16,7 @@ const formatGroup = (group) => ({
     name: member.name,
   })),
   owner: group.owner,
-  picture: group.picture,
+  groupPicture: group.groupPicture,
 });
 
 exports.getGroupsFromUser = async (req, res) => {
@@ -107,8 +108,9 @@ exports.createGroup = async (req, res) => {
  */
 exports.editGroup = async (req, res) => {
   const groupId = req.params.groupId;
-  const { name, picture } = req.body;
+  const { name } = req.body;
   const user = req.user;
+  const file = req.file;
 
   console.log("\n🤼 Editing group with id: ", groupId);
 
@@ -123,6 +125,7 @@ exports.editGroup = async (req, res) => {
       console.log("❌ Group not found");
       return res.status(404).json({ message: "Group not found" });
     }
+
     // Only owner can edit
     if (group.owner.toString() !== user._id.toString()) {
       console.log("❌ Only the group owner can edit the group.");
@@ -130,13 +133,60 @@ exports.editGroup = async (req, res) => {
         .status(403)
         .json({ message: "Only the group owner can edit the group." });
     }
+
+    // Update name if provided
     if (name) group.name = name;
-    if (picture) group.picture = picture;
+
+    // Handle group picture upload
+    if (file) {
+      try {
+        console.log("📸 Uploading new group picture...");
+
+        // Upload new picture to Azure
+        const newPictureUrl = await uploadGroupPic(
+          groupId,
+          file.buffer,
+          file.originalname,
+          file.mimetype
+        );
+
+        // Store old picture URL for deletion
+        const oldPictureUrl = group.groupPicture;
+
+        // Update group with new picture URL
+        group.groupPicture = newPictureUrl;
+
+        // Delete old picture if it exists
+        if (oldPictureUrl) {
+          try {
+            console.log("🗑️ Deleting old group picture...");
+            await deleteGroupPic(oldPictureUrl);
+            console.log("✅ Old group picture deleted successfully");
+          } catch (deleteError) {
+            console.log(
+              "⚠️ Warning: Failed to delete old group picture:",
+              deleteError.message
+            );
+            // Continue even if delete fails
+          }
+        }
+
+        console.log("✅ Group picture uploaded successfully");
+      } catch (uploadError) {
+        console.log("❌ Error uploading group picture:", uploadError);
+        return res.status(500).json({
+          message: "Failed to upload group picture",
+          error: uploadError.message,
+        });
+      }
+    }
+
     await group.save();
     const populatedGroup = await Group.findById(groupId).populate(
       "members",
       "_id name"
     );
+
     console.log("✅ Group updated successfully");
     res.json({
       success: true,
@@ -148,6 +198,79 @@ exports.editGroup = async (req, res) => {
     res
       .status(500)
       .json({ error: "Failed to edit group", details: err.message });
+  }
+};
+
+/**
+ * Delete group picture only
+ */
+exports.deleteGroupPicture = async (req, res) => {
+  const groupId = req.params.groupId;
+  const user = req.user;
+
+  console.log("\n🤼 Deleting group picture for group: ", groupId);
+
+  if (!groupId) {
+    console.log("❌ Missing group id");
+    return res.status(400).json({ message: "Missing group id" });
+  }
+
+  try {
+    const group = await Group.findById(groupId);
+    if (!group) {
+      console.log("❌ Group not found");
+      return res.status(404).json({ message: "Group not found" });
+    }
+
+    // Only owner can delete group picture
+    if (group.owner.toString() !== user._id.toString()) {
+      console.log("❌ Only the group owner can delete the group picture.");
+      return res
+        .status(403)
+        .json({
+          message: "Only the group owner can delete the group picture.",
+        });
+    }
+
+    if (!group.groupPicture) {
+      console.log("❌ Group has no picture to delete");
+      return res
+        .status(400)
+        .json({ message: "Group has no picture to delete" });
+    }
+
+    try {
+      // Delete picture from Azure
+      console.log("🗑️ Deleting group picture from Azure...");
+      await deleteGroupPic(group.groupPicture);
+
+      // Remove picture URL from database
+      group.groupPicture = null;
+      await group.save();
+
+      const populatedGroup = await Group.findById(groupId).populate(
+        "members",
+        "_id name"
+      );
+
+      console.log("✅ Group picture deleted successfully");
+      res.json({
+        success: true,
+        message: "Group picture deleted successfully",
+        group: formatGroup(populatedGroup),
+      });
+    } catch (deleteError) {
+      console.log("❌ Error deleting group picture from Azure:", deleteError);
+      return res.status(500).json({
+        message: "Failed to delete group picture",
+        error: deleteError.message,
+      });
+    }
+  } catch (err) {
+    console.log("❌ Error deleting group picture:", err);
+    res
+      .status(500)
+      .json({ error: "Failed to delete group picture", details: err.message });
   }
 };
 
@@ -179,6 +302,21 @@ exports.deleteGroup = async (req, res) => {
         .json({ message: "Only the group owner can delete the group." });
     }
 
+    // Delete group picture from Azure if it exists
+    if (group.groupPicture) {
+      try {
+        console.log("🗑️ Deleting group picture from Azure...");
+        await deleteGroupPic(group.groupPicture);
+        console.log("✅ Group picture deleted from Azure");
+      } catch (deleteError) {
+        console.log(
+          "⚠️ Warning: Failed to delete group picture from Azure:",
+          deleteError.message
+        );
+        // Continue with group deletion even if picture deletion fails
+      }
+    }
+
     await Group.deleteOne({ _id: groupId });
     user.groups = user.groups.filter((g) => g.toString() !== groupId);
     await user.save();
@@ -204,7 +342,9 @@ exports.addMemberToGroup = async (req, res) => {
 
   if (!groupId || !userIds) {
     console.log("❌ Missing groupId or userIds array");
-    return res.status(400).json({ message: "Missing groupId or userIds array" });
+    return res
+      .status(400)
+      .json({ message: "Missing groupId or userIds array" });
   }
 
   try {
@@ -222,8 +362,10 @@ exports.addMemberToGroup = async (req, res) => {
     }
 
     // Filter out users that are already members
-    const newMembers = userIds.filter(userId => !group.members.includes(userId));
-    
+    const newMembers = userIds.filter(
+      (userId) => !group.members.includes(userId)
+    );
+
     if (newMembers.length === 0) {
       console.log("❌ All users are already members of the group.");
       return res
@@ -276,7 +418,9 @@ exports.leaveGroup = async (req, res) => {
     }
     // Owner não pode sair do próprio grupo
     if (group.owner.toString() === user._id.toString()) {
-      console.log("❌ Owner cannot leave their own group. Delete the group instead.");
+      console.log(
+        "❌ Owner cannot leave their own group. Delete the group instead."
+      );
       return res.status(400).json({
         message:
           "Owner cannot leave their own group. Delete the group instead.",
@@ -306,7 +450,7 @@ exports.removeMemberFromGroup = async (req, res) => {
   const user = req.user;
 
   console.log("\n🤼 Removing member from group with id: ", groupId);
-  
+
   try {
     const group = await Group.findById(groupId);
     if (!group) {
@@ -321,19 +465,23 @@ exports.removeMemberFromGroup = async (req, res) => {
         .json({ message: "Only the group owner can remove members." });
     }
     // Remove member from group
-    group.members = group.members.filter(
-      (m) => m.toString() !== memberId
-    );
+    group.members = group.members.filter((m) => m.toString() !== memberId);
     await group.save();
     const member = await User.findById(memberId);
     member.groups = member.groups.filter((g) => g.toString() !== groupId);
     await member.save();
     console.log("✅ Member removed from group successfully");
-    res.json({ success: true, message: "Member removed from group successfully"});
+    res.json({
+      success: true,
+      message: "Member removed from group successfully",
+    });
   } catch (err) {
     console.log("❌ Error removing member from group:", err);
     res
       .status(500)
-      .json({ error: "Failed to remove member from group", details: err.message });
+      .json({
+        error: "Failed to remove member from group",
+        details: err.message,
+      });
   }
-}
+};

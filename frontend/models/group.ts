@@ -6,7 +6,7 @@ export interface Group {
     _id: string;
     name: string;
   }[];
-  picture?: string;
+  groupPicture?: string;
   createdAt?: Date;
   updatedAt?: Date;
 }
