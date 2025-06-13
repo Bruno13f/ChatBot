@@ -125,7 +125,7 @@ export function ChatCard({ user, group }: ChatCardProps) {
     //   disconnectWeatherSocket();
     // };
 
-  }, [group]);
+  }, []);
 
   React.useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -315,9 +315,10 @@ export function ChatCard({ user, group }: ChatCardProps) {
                   <MessageCard
                     key={index}
                     message={msg.message}
-                    isSystem={msg.sender.name === "system"}
+                    isFromOwner={msg.sender.userId === user?._id}
                     isWeather={msg.isWeather}
                     timestamp={msg.timestamp}
+                    sender={msg.sender}
                   />
                 ))
               ) : (

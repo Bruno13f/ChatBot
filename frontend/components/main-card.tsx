@@ -44,6 +44,7 @@ export function MainCard({userId}: MainCardProps) {
         }
 
         const user = await getUserById(userId);
+        console.log(user)
         setUser(user);
 
       };

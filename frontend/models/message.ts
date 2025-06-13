@@ -5,6 +5,7 @@ export interface Message {
     sender: {
       name: string;
       userId: string;
+      profilePicture: string;
     },
     isJoke: boolean; 
     isWeather: boolean;

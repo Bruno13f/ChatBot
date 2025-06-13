@@ -14,7 +14,8 @@ const formatMessage = (message) => ({
   message: message.message,
   sender: {
     name: message.sender,
-    userId: message.userId
+    userId: message.userId,
+    profilePicture: message.profilePicture
   },
   isJoke: message.isJoke, 
   isWeather: message.isWeather,

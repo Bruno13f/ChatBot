@@ -13,19 +13,50 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { AvatarWithHoverDelete } from "./avatar-with-hover-delete";
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
 interface ChatCardProps {
   message: string;
-  isSystem?: boolean;
+  isFromOwner: boolean;
   isWeather: boolean;
   timestamp?: string | Date;
+  sender: {
+    name: string;
+    profilePicture: string;
+  };
 }
 
-export function MessageCard({ message, isSystem = false, isWeather, timestamp }: ChatCardProps) {
+export function MessageCard({ message, isFromOwner, isWeather, timestamp, sender }: ChatCardProps) {
   const { theme } = useTheme();
   const isDark = theme === "dark";
+
+  // Function to get initials from a name
+  const getInitials = (name: string) => {
+    return name
+      .split(" ")
+      .map((word) => word[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
+  // Function to get a random color for the avatar background
+  const getRandomColor = (name: string) => {
+    const colors = [
+      "bg-indigo-500",
+      "bg-green-600",
+      "bg-red-500",
+      "bg-orange-500",
+      "bg-purple-500",
+    ];
+    const index =
+      name.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0) %
+      colors.length;
+    return colors[index];
+  };
 
   const temperaturesRaw = message.split(",").map(temp => parseFloat(temp.trim()));
   let temperatures = [...temperaturesRaw];
@@ -121,21 +152,36 @@ export function MessageCard({ message, isSystem = false, isWeather, timestamp }:
   }
 
   return (
-    <div className={`max-w-[100%] break-words whitespace-normal flex flex-col gap-2 rounded-lg px-3 py-2 text-sm ${
-      isSystem 
-        ? "bg-primary text-secondary text-left self-start" 
-        : "bg-secondary text-right self-end"
-    }`}>
-      {isWeather ? (
-        <div className="w-full h-[300px]">
-          <Line data={chartData} options={chartOptions} />
+    <div className={`flex flex-row gap-2 ${isFromOwner ? 'justify-end' : 'justify-start'} items-start w-full`}>
+      {!isFromOwner && (
+        <Avatar className="size-6">
+          <AvatarImage src={sender.profilePicture} />
+          <AvatarFallback className={`${getRandomColor(sender.name)} text-white`}>
+            {getInitials(sender.name)}
+          </AvatarFallback>
+        </Avatar>
+      )}
+      <div className={`flex flex-col gap-2 max-w-[70%] ${isFromOwner ? 'items-end' : 'items-start'}`}>
+        {!isFromOwner && (
+          <div className="text-sm font-medium">{sender.name}</div>
+        )}
+        <div className={`break-words whitespace-normal rounded-lg px-3 py-2 text-sm ${
+          !isFromOwner 
+            ? "bg-secondary-foreground text-secondary text-left self-start" 
+            : "bg-secondary text-right self-end"
+        }`}>
+          {isWeather ? (
+            <div className="w-full h-[300px]">
+              <Line data={chartData} options={chartOptions} />
+            </div>
+          ) : (
+            <ReactMarkdown>{message}</ReactMarkdown>
+          )}
+          {timeString && (
+            <div className="text-xs text-muted-foreground mt-1 text-right">{timeString}</div>
+          )}
         </div>
-      ) : (
-        <ReactMarkdown>{message}</ReactMarkdown>
-      )}
-      {timeString && (
-        <div className="text-xs text-gray-400 mt-1 text-right">{timeString}</div>
-      )}
+      </div>
     </div>
   );
 }
