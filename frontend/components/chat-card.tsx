@@ -14,10 +14,10 @@ import { H4 } from "@/components/ui/typography"
 
 interface ChatCardProps {
   userId: string
-  //group: Group
+  group: Group
 }
 
-export function ChatCard({userId /*, group*/}: ChatCardProps) { 
+export function ChatCard({userId, group}: ChatCardProps) { 
 
   const [messages, setMessages] = React.useState<Array<{text: string, sender: string, isWeather: boolean}>>([]);
   const [message, setMessage] = React.useState("");
@@ -253,7 +253,7 @@ export function ChatCard({userId /*, group*/}: ChatCardProps) {
   return (
     <Card className="flex-1 p-4 flex flex-col h-100 md:h-170 lg:h-180">
       <CardHeader>
-        <CardTitle><H4>Group Name</H4></CardTitle>
+        <CardTitle><H4>{group.name}</H4></CardTitle>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col items-center relative w-full">
         <div className={`absolute top-0 left-0 right-0 h-full w-full overflow-y-auto px-4 flex justify-center ${fetching ? "items-center" : "items-start"}`}>

@@ -15,9 +15,10 @@ import { Group } from "@/models/group"
 interface GroupsCardProps {
   groups: Group[]
   onInfoClick?: () => void
+  onGroupClick?: (group: Group) => void
 }
 
-export function GroupsCard({ onInfoClick, groups }: GroupsCardProps) {
+export function GroupsCard({ onInfoClick, groups, onGroupClick }: GroupsCardProps) {
   
   let [showCreateGroup, setShowCreateGroup] = React.useState(false);
 
@@ -88,7 +89,9 @@ export function GroupsCard({ onInfoClick, groups }: GroupsCardProps) {
             <ScrollArea className="flex-1 md:max-h-140 lg:max-h-160 w-full">
             <div className="flex flex-row md:flex-col lg:flex-col gap-2 w-full">
               {groups.map((group) => (
-                <GroupCard key={group._id} group={group}/>
+                <div key={group._id} onClick={() => onGroupClick?.(group)} className="w-full cursor-pointer">
+                  <GroupCard group={group} />
+                </div>
               ))}
             </div>
           </ScrollArea>

@@ -22,6 +22,7 @@ interface MainCardProps {
 export function MainCard({userId}: MainCardProps) {
   const [showInfoPanel, setShowInfoPanel] = React.useState(false);
   const [groups, setGroups] = React.useState<Group[]>([]);
+  const [selectedGroup, setSelectedGroup] = React.useState<Group | null>(null);
   const isFirstRender = React.useRef(true);
 
   useEffect(() => {
@@ -30,6 +31,7 @@ export function MainCard({userId}: MainCardProps) {
       const fetchGroups = async () => {
         const groups = await getGroups();
         setGroups(groups);
+        setSelectedGroup(groups[0] || null); // seleciona o primeiro grupo por padrão
         console.log(groups);
       }
       fetchGroups();
@@ -40,7 +42,7 @@ export function MainCard({userId}: MainCardProps) {
     <div className="flex flex-col md:flex-row items-stretch justify-center w-full h-full gap-x-5 gap-y-5 relative">
       {/* GroupsCard: pass setShowInfoPanel to Info button */}
       <div className="w-full md:w-2/6 lg:w-1/6 flex items-center justify-center px-4 mb:px-0 lg:px-0">
-        <GroupsCard onInfoClick={() => setShowInfoPanel(true)} groups={groups} />
+        <GroupsCard onInfoClick={() => setShowInfoPanel(true)} groups={groups} onGroupClick={setSelectedGroup} />
       </div>
       {/* Tabs */}
       <div className="w-full md:w-4/6 lg:w-3/5 flex items-center justify-center h-full">
@@ -52,7 +54,7 @@ export function MainCard({userId}: MainCardProps) {
             <TabsTrigger value="weather">Weather</TabsTrigger>
           </TabsList>
           <TabsContent value="chat">
-            <ChatCard userId={userId} /*group={groups[0]}*//>
+            {selectedGroup && <ChatCard userId={userId} group={selectedGroup} />}
           </TabsContent>
           <TabsContent value="openai">
             <JokesCard userId={userId} />
@@ -67,12 +69,12 @@ export function MainCard({userId}: MainCardProps) {
       </div>
       {/* GroupInfoCard: only visible on large screens */}
       <div className="hidden lg:flex w-1/6 items-center justify-center">
-        <GroupInfoCard/>
+        {selectedGroup && <GroupInfoCard group={selectedGroup} />}
       </div>
       {/* Overlay for sm/md */}
-      {showInfoPanel && (
+      {showInfoPanel && selectedGroup && (
         <CardWidget onClose={() => setShowInfoPanel(false)}>
-          <GroupInfoCard />
+          <GroupInfoCard group={selectedGroup} />
         </CardWidget>
       )}
     </div>

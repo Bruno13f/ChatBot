@@ -21,6 +21,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { Combobox } from "@/components/ui/combobox"
+import { Group } from "@/models/group"
 
 const avatars = [
   { img: "https://github.com/shadcn.png", fallback: "CN", color: "bg-indigo-500" },
@@ -40,24 +41,27 @@ const avatars = [
   { img: "", fallback: "RS", color: "bg-orange-500" },
 ];
 
-export function GroupInfoCard() {
+interface GroupInfoCardProps {
+  group: Group;
+}
 
+export function GroupInfoCard({ group }: GroupInfoCardProps) {
   let [showEditGroup, setShowEditGroup] = React.useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false)
 
   const handleDeleteGroup = () => {
-    console.log("Delete group!")
+    console.log("Delete group!", group._id)
   }
 
   return (
     <Card className="w-full h-full bg-background border-0 shadow-none justify-center">
       <div className="flex flex-col items-center justify-center">
         <Avatar className="size-22">
-            <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
-            <AvatarFallback className="bg-gray-400 text-white">AC</AvatarFallback>
+            <AvatarImage src={group.picture || "https://github.com/shadcn.png"} alt={group.name} />
+            <AvatarFallback className="bg-gray-400 text-white">{group.name?.slice(0,2).toUpperCase()}</AvatarFallback>
         </Avatar>
-        <h1 className="text-[1rem] font-regular mt-4">Acabar cu curso</h1>
-        <h2 className="text-sm font-regular text-muted-foreground">5 members</h2>
+        <h1 className="text-[1rem] font-regular mt-4">{group.name}</h1>
+        <h2 className="text-sm font-regular text-muted-foreground">{group.members.length} members</h2>
         <div className="flex flex-row gap-2 mt-4">
           <Button variant="outline" className="cursor-pointer" onClick={() => setShowEditGroup(true)}><Pencil/>Edit</Button>
           <AlertDialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
