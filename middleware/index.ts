@@ -21,7 +21,7 @@ io.on("connection", (socket) => {
   // Handle incoming messages
   socket.on("message", (message) => {
     // Broadcast to all clients except sender
-    socket.broadcast.emit("message", message);
+    console.log("message", message);
   });
 });
 
