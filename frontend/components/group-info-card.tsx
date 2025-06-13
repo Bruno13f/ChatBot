@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Combobox } from "@/components/ui/combobox"
 import { Group } from "@/models/group"
-import { deleteGroup, updateGroup, addUsersToGroup, leaveGroup } from "@/services/groups"
+import { deleteGroup, updateGroup, addUsersToGroup, leaveGroup, removeMemberFromGroup } from "@/services/groups"
 import { getAllUsers } from "@/services/users"
 import { ToastSuccess } from "@/components/ui/toast-success"
 import { ToastError } from "@/components/ui/toast-error"
@@ -96,9 +96,9 @@ export function GroupInfoCard({ group, userId, onGroupDeleted, onGroupUpdated }:
     if (selectedUserIds.length === 0) return;
     try {
       const updatedGroup = await ToastPromise(addUsersToGroup(group._id, selectedUserIds), 'Adding users...', 'Users added to group!', 'Failed to add users to group.'); 
-      setSelectedUserIds([]);
       if (onGroupUpdated) onGroupUpdated(updatedGroup);
       setInfoText("Invite users...");
+      setSelectedUserIds([]);
     } catch (err: any) {
       console.log(err.message);
     }
@@ -122,6 +122,17 @@ export function GroupInfoCard({ group, userId, onGroupDeleted, onGroupUpdated }:
       if (onGroupDeleted) onGroupDeleted(group._id);
     } catch (err: any) {
       ToastError(err.message || 'Failed to leave group.');
+    }
+  }
+
+  const handleRemoveMember = async (memberId: string) => {
+    if (!isOwner) return;
+    try {
+      await ToastPromise(removeMemberFromGroup(group._id, memberId), 'Removing member...', 'Member removed successfully!', 'Failed to remove member.');
+      group.members = group.members.filter((member) => member._id !== memberId);
+      if (onGroupUpdated) onGroupUpdated(group);
+    } catch (err) {
+      console.log(err);
     }
   }
 
@@ -193,6 +204,7 @@ export function GroupInfoCard({ group, userId, onGroupDeleted, onGroupUpdated }:
               users={allUsers}
               onAddUser={handleAddUser}
               infoText={infoText}
+              selectedUserIds={selectedUserIds}
             />
             <Button
               size={"icon"}
@@ -208,7 +220,13 @@ export function GroupInfoCard({ group, userId, onGroupDeleted, onGroupUpdated }:
           <h1 className="text-[1rem] font-regular">Members</h1>
           <AvatarGroup className="flex flex-wrap flex-row items-center gap-3 mt-3 pl-2" max={0}>
             {sortedMembers.map((member) => (
-              <AvatarWithHoverDelete key={member._id} name={member.name}>
+              <AvatarWithHoverDelete 
+                key={member._id} 
+                name={member.name}
+                onDelete={isOwner && member._id !== userId ? () => handleRemoveMember(member._id) : undefined}
+                isOwner={isOwner}
+                isCurrentUser={member._id === userId}
+              >
                 <Avatar className="cursor-pointer">
                   <AvatarImage src={`/api/users/${member._id}/avatar`} alt={member.name} />
                   <AvatarFallback className={`${getRandomColor(member._id)} text-white`}>

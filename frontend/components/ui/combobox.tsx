@@ -23,11 +23,11 @@ interface ComboboxProps {
   users: { _id: string; name: string }[];
   onAddUser: (userIds: string[]) => void;
   infoText: string;
+  selectedUserIds: string[];
 }
 
-export function Combobox({ groupMembers, users, onAddUser, infoText }: ComboboxProps) {
+export function Combobox({ groupMembers, users, onAddUser, infoText, selectedUserIds }: ComboboxProps) {
   const [open, setOpen] = React.useState(false);
-  const [selectedIds, setSelectedIds] = React.useState<string[]>([]);
 
   // Filter users that are not in the group
   const availableUsers = users.filter(
@@ -58,11 +58,10 @@ export function Combobox({ groupMembers, users, onAddUser, infoText }: ComboboxP
                   key={user._id}
                   value={user._id}
                   onSelect={(currentId) => {
-                    const newSelectedIds = selectedIds.includes(currentId)
-                      ? selectedIds.filter(id => id !== currentId)
-                      : [...selectedIds, currentId];
+                    const newSelectedIds = selectedUserIds.includes(currentId)
+                      ? selectedUserIds.filter(id => id !== currentId)
+                      : [...selectedUserIds, currentId];
                     
-                    setSelectedIds(newSelectedIds);
                     onAddUser(newSelectedIds);
                   }}
                 >
@@ -70,7 +69,7 @@ export function Combobox({ groupMembers, users, onAddUser, infoText }: ComboboxP
                   <Check
                     className={cn(
                       "ml-auto",
-                      selectedIds.includes(user._id) ? "opacity-100" : "opacity-0"
+                      selectedUserIds.includes(user._id) ? "opacity-100" : "opacity-0"
                     )}
                   />
                 </CommandItem>

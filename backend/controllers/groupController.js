@@ -299,3 +299,41 @@ exports.leaveGroup = async (req, res) => {
       .json({ error: "Failed to leave group", details: err.message });
   }
 };
+
+exports.removeMemberFromGroup = async (req, res) => {
+  const groupId = req.params.groupId;
+  const memberId = req.params.memberId;
+  const user = req.user;
+
+  console.log("\n🤼 Removing member from group with id: ", groupId);
+  
+  try {
+    const group = await Group.findById(groupId);
+    if (!group) {
+      console.log("❌ Group not found");
+      return res.status(404).json({ message: "Group not found" });
+    }
+    // Only owner can remove members
+    if (group.owner.toString() !== user._id.toString()) {
+      console.log("❌ Only the group owner can remove members.");
+      return res
+        .status(403)
+        .json({ message: "Only the group owner can remove members." });
+    }
+    // Remove member from group
+    group.members = group.members.filter(
+      (m) => m.toString() !== memberId
+    );
+    await group.save();
+    const member = await User.findById(memberId);
+    member.groups = member.groups.filter((g) => g.toString() !== groupId);
+    await member.save();
+    console.log("✅ Member removed from group successfully");
+    res.json({ success: true, message: "Member removed from group successfully"});
+  } catch (err) {
+    console.log("❌ Error removing member from group:", err);
+    res
+      .status(500)
+      .json({ error: "Failed to remove member from group", details: err.message });
+  }
+}

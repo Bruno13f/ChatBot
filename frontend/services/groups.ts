@@ -99,6 +99,7 @@ export const addUsersToGroup = async (groupId: string, userIds: string[]): Promi
     if (typeof window === "undefined") throw new Error("Cannot add users to group on server side");
     const token = localStorage.getItem('token');
     if (!token) {
+        window.location.href = "/login";
         throw new Error("No token found");
     }
     const res = await fetch(`${BACKEND_URI}/groups/${groupId}/members`, {
@@ -130,5 +131,24 @@ export async function leaveGroup(groupId: string) {
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || 'Failed to leave group.');
+    return true;
+}
+
+export async function removeMemberFromGroup(groupId: string, memberId: string) {
+    if (typeof window === "undefined") return;
+    const token = localStorage.getItem('token');
+    if (!token) {
+        window.location.href = "/login";
+        return;
+    }
+    const res = await fetch(`${BACKEND_URI}/groups/${groupId}/members/${memberId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to remove member from group.');
     return true;
 }
