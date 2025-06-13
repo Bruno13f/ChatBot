@@ -20,8 +20,13 @@ const {
   leaveGroup,
   removeMemberFromGroup,
 } = require("../controllers/groupController");
-const { getAllUsers, getUserById, updateUser } = require("../controllers/userController");
+const {
+  getAllUsers,
+  getUserById,
+  updateUser,
+} = require("../controllers/userController");
 const authenticateToken = require("../middleware/auth");
+const upload = require("../middleware/upload");
 
 router.post("/login", login);
 router.post("/sign-up", signUp);
@@ -35,7 +40,12 @@ router.get("/jokes/:userId", authenticateToken, getJokes);
 router.get("/users/:userId/groups", authenticateToken, getGroupsFromUser);
 router.get("/users", authenticateToken, getAllUsers);
 router.get("/users/:userId", authenticateToken, getUserById);
-router.put("/users/:userId", authenticateToken, updateUser);
+router.put(
+  "/users/:userId",
+  authenticateToken,
+  upload.single("profilePicture"),
+  updateUser
+);
 
 router.post("/groups", authenticateToken, createGroup);
 router.put("/groups/:groupId", authenticateToken, editGroup);
