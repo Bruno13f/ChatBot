@@ -96,11 +96,10 @@ export function Navbar({showLogout}: NavbarProps) {
           <User className="w-6 h-6" />
         </Button>
         {isProfileOpen && (
-            <CardWidget onClose={() => setIsProfileOpen(false)}>
-              <EditProfile/>
-            </CardWidget>
-          )
-        }
+          <CardWidget onClose={() => setIsProfileOpen(false)}>
+            <EditProfile onClose={() => setIsProfileOpen(false)} />
+          </CardWidget>
+        )}
         {showLogout && (
           <AlertDialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <AlertDialogTrigger asChild>

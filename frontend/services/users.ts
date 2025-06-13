@@ -20,3 +20,30 @@ export async function getAllUsers() {
     if (!res.ok) throw new Error(data.message || 'Something went wrong.');
     return data;
 }
+
+export async function getUserById(userId: string) {
+  const token = localStorage.getItem('token');
+  if (!token) throw new Error("No token found");
+  const res = await fetch(`${BACKEND_URI}/users/${userId}`, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  });
+  if (!res.ok) throw new Error("Failed to fetch user");
+  return res.json();
+}
+
+export async function updateUser(userId: string, name: string, email: string) {
+  const token = localStorage.getItem('token');
+  if (!token) throw new Error("No token found");
+  const res = await fetch(`${BACKEND_URI}/users/${userId}`, {
+    method: "PUT",
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    },
+    body: JSON.stringify({ name, email }),
+  });
+  if (!res.ok) throw new Error("Failed to update user");
+  return res.json();
+}
