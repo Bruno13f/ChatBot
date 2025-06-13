@@ -12,10 +12,11 @@ import {
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { useRouter } from "next/navigation" // Import useRouter for navigation
-import toast, { Toaster } from 'react-hot-toast';
+import { useRouter } from "next/navigation" 
 import { Loader2 } from "lucide-react"
 import { login } from "@/services/auth"
+import { ToastSuccess } from "@/components/ui/toast-success"
+import { ToastError } from "@/components/ui/toast-error"
 
 export function LoginForm({
   className,
@@ -58,28 +59,11 @@ export function LoginForm({
       const data = await res.json();
 
       localStorage.setItem('token', data.token);
-      toast.success('Logged in successfully!', {
-        style: {
-          borderRadius: '6px',
-          background: 'var(--card)',
-          padding: '10px',
-          border: '1px solid var(--border)',
-          color: 'var(--text)',
-        },
-      })
+      ToastSuccess('Logged in successfully!');
       localStorage.setItem('userId', data.userId); // Store userId in localStorage
       router.push(`/chatbot`);
     } catch (error) {
-      toast((error instanceof Error ? error.message : "Something went wrong."), {
-        icon: '❌',
-        style: {
-          borderRadius: '6px',
-          background: 'var(--card)',
-          padding: '10px',
-          border: '1px solid var(--border)',
-          color: 'var(--text)',
-        },
-      });
+      ToastError((error instanceof Error ? error.message : "Something went wrong."));
       console.error('Login error:', error);
     } finally {
       setLoading(false);

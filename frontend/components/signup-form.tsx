@@ -16,6 +16,8 @@ import { Loader2 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import toast, { Toaster } from 'react-hot-toast';
 import { login, signup } from "@/services/auth"
+import { ToastSuccess } from "@/components/ui/toast-success"
+import { ToastError } from "@/components/ui/toast-error"
 
 export function SignUpForm({
   className,
@@ -84,15 +86,7 @@ export function SignUpForm({
 
       await signup(email, password, name);
       
-      toast.success('Account created successfully!', {
-        style: {
-          borderRadius: '6px',
-          background: 'var(--card)',
-          padding: '10px',
-          border: '1px solid var(--border)',
-          color: 'var(--text)',
-        },
-      })
+      ToastSuccess('Account created successfully!');
 
       await toast.promise( 
         logginIn(email, password), {
@@ -110,16 +104,7 @@ export function SignUpForm({
       })
 
     } catch (error) {
-      toast((error instanceof Error ? error.message : "Something went wrong."), {
-        icon: '❌',
-        style: {
-          borderRadius: '6px',
-          background: 'var(--card)',
-          padding: '10px',
-          border: '1px solid var(--border)',
-          color: 'var(--text)',
-        },
-      });
+      ToastError((error instanceof Error ? error.message : "Something went wrong."));
       console.error('Sign-up error:', error);
     } finally {
       setLoading(false);

@@ -19,6 +19,7 @@ import {
 import { useState } from "react"
 import { CardWidget } from "@/components/card-widget"
 import { EditProfile } from "@/components/edit-profile"
+import { ToastSuccess } from "./ui/toast-success"
 
 interface NavbarProps {
   showLogout: boolean
@@ -33,15 +34,7 @@ export function Navbar({showLogout}: NavbarProps) {
     localStorage.removeItem("token")
     localStorage.removeItem("userId")
     router.push("/login")
-    toast.success('Logged out successfully!', {
-      style: {
-        borderRadius: '6px',
-        background: 'var(--card)',
-        padding: '10px',
-        border: '1px solid var(--border)',
-        color: 'var(--text)',
-      },
-    })
+    ToastSuccess('Logged out successfully!');
     setIsDialogOpen(false)
   }
 

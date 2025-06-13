@@ -22,9 +22,10 @@ interface ComboboxProps {
   groupMembers: { _id: string; name: string }[];
   users: { _id: string; name: string }[];
   onAddUser: (userId: string) => void;
+  infoText: string;
 }
 
-export function Combobox({ groupMembers, users, onAddUser }: ComboboxProps) {
+export function Combobox({ groupMembers, users, onAddUser, infoText }: ComboboxProps) {
   const [open, setOpen] = React.useState(false);
   const [id, setId] = React.useState("");
 
@@ -40,11 +41,9 @@ export function Combobox({ groupMembers, users, onAddUser }: ComboboxProps) {
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className="justify-between"
+          className="justify-between w-[140px]"
         >
-          {id
-            ? availableUsers.find((user) => user._id === id)?.name
-            : "Invite users..."}
+          {infoText}
           <ChevronsUpDown className="opacity-50" />
         </Button>
       </PopoverTrigger>
@@ -59,9 +58,16 @@ export function Combobox({ groupMembers, users, onAddUser }: ComboboxProps) {
                   key={user._id}
                   value={user._id}
                   onSelect={(currentId) => {
-                    setId(currentId === id ? "" : currentId);
+                    if (currentId === id) {
+                      // If clicking the same user, deselect
+                      setId("");
+                      onAddUser(""); // Pass empty string to indicate deselection
+                    } else {
+                      // If selecting a different user
+                      setId(currentId);
+                      onAddUser(currentId);
+                    }
                     setOpen(false);
-                    if (currentId !== id) onAddUser(currentId);
                   }}
                 >
                   {user.name}

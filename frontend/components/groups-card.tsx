@@ -9,9 +9,9 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { CardWidget } from "@/components/card-widget"
 import { GroupActions } from "@/components/group-actions"
 import { createGroup } from "@/services/groups"
-import toast, { Toaster } from 'react-hot-toast';
 import { Group } from "@/models/group"
-import { useEffect } from "react"
+import { ToastSuccess } from "@/components/ui/toast-success"
+import { ToastError } from "@/components/ui/toast-error"
 
 interface GroupsCardProps {
   groups: Group[]
@@ -29,27 +29,10 @@ export function GroupsCard({ onInfoClick, groups, onGroupClick, selectedGroupId 
       const group = await createGroup(data);
       groups.push(group);
 
-      toast.success('Group created successfully!', {
-        style: {
-          borderRadius: '6px',
-          background: 'var(--card)',
-          padding: '10px',
-          border: '1px solid var(--border)',
-          color: 'var(--text)',
-        },
-      })
+      ToastSuccess('Group created successfully!');
       setShowCreateGroup(false);
     } catch (error) {
-      toast((error instanceof Error ? error.message : "Something went wrong."), {
-        icon: '❌',
-        style: {
-          borderRadius: '6px',
-          background: 'var(--card)',
-          padding: '10px',
-          border: '1px solid var(--border)',
-          color: 'var(--text)',
-        },
-      });
+      ToastError((error instanceof Error ? error.message : "Something went wrong."));
     }
   }
   

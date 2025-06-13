@@ -1,5 +1,4 @@
 import * as React from "react"
-import toast from 'react-hot-toast';
 
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
@@ -25,6 +24,8 @@ import { Combobox } from "@/components/ui/combobox"
 import { Group } from "@/models/group"
 import { deleteGroup, updateGroup, addUserToGroup, leaveGroup } from "@/services/groups"
 import { getAllUsers } from "@/services/users"
+import { ToastSuccess } from "@/components/ui/toast-success"
+import { ToastError } from "@/components/ui/toast-error"
 
 const avatars = [
   { img: "https://github.com/shadcn.png", fallback: "CN", color: "bg-indigo-500" },
@@ -56,6 +57,7 @@ export function GroupInfoCard({ group, userId, onGroupDeleted, onGroupUpdated }:
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [allUsers, setAllUsers] = useState<{ _id: string; name: string }[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<string>("");
+  const [infoText, setInfoText] = React.useState("Invite users...");
   const isOwner = group.owner === userId;
 
   React.useEffect(() => {
@@ -64,25 +66,39 @@ export function GroupInfoCard({ group, userId, onGroupDeleted, onGroupUpdated }:
         const users = await getAllUsers();
         setAllUsers(users);
       } catch (err) {
-        toast.error("Failed to fetch users");
+        ToastError("Failed to fetch users");
       }
     }
     fetchUsers();
   }, []);
 
   const handleAddUser = async (userId: string) => {
-    setSelectedUserId(userId);
+    if (!userId) {
+      // Handle deselection
+      setSelectedUserId("");
+      setInfoText("Invite users...");
+      return;
+    }
+
+    if (selectedUserId === userId) {
+      setSelectedUserId("");
+      setInfoText("Invite users...");
+    } else {
+      setSelectedUserId(userId);
+      setInfoText(allUsers.find((user) => user._id === userId)?.name || "");
+    }
   };
 
   const handleAddUserButton = async () => {
     if (!selectedUserId) return;
     try {
       const updatedGroup = await addUserToGroup(group._id, selectedUserId);
-      toast.success('User added to group!');
+      ToastSuccess('User added to group!');
       setSelectedUserId("");
+      setInfoText("Invite users...");
       if (onGroupUpdated) onGroupUpdated(updatedGroup);
     } catch (err: any) {
-      toast.error(err.message || 'Failed to add user to group.');
+      ToastError(err.message || 'Failed to add user to group.');
     }
   };
 
@@ -90,7 +106,7 @@ export function GroupInfoCard({ group, userId, onGroupDeleted, onGroupUpdated }:
     try {
       await deleteGroup(group._id);
       setIsDialogOpen(false);
-      toast.success('Group deleted successfully!');
+      ToastSuccess('Group deleted successfully!');
       if (onGroupDeleted) onGroupDeleted(group._id);
     } catch (err) {
       alert("Failed to delete group.");
@@ -101,10 +117,10 @@ export function GroupInfoCard({ group, userId, onGroupDeleted, onGroupUpdated }:
     try {
       await leaveGroup(group._id);
       setIsDialogOpen(false);
-      toast.success('You left the group!');
+      ToastSuccess('You left the group!');
       if (onGroupDeleted) onGroupDeleted(group._id);
     } catch (err: any) {
-      toast.error(err.message || 'Failed to leave group.');
+      ToastError(err.message || 'Failed to leave group.');
     }
   }
 
@@ -159,10 +175,10 @@ export function GroupInfoCard({ group, userId, onGroupDeleted, onGroupUpdated }:
                 try {
                   const updated = await updateGroup(group._id, name, picture);
                   setShowEditGroup(false);
-                  toast.success('Group updated successfully!');
+                  ToastSuccess('Group updated successfully!');
                   if (onGroupUpdated) onGroupUpdated(updated);
                 } catch (err) {
-                  toast.error('Failed to update group.');
+                  ToastError('Failed to update group.');
                 }
               }}
             />
@@ -175,6 +191,7 @@ export function GroupInfoCard({ group, userId, onGroupDeleted, onGroupUpdated }:
               groupMembers={group.members}
               users={allUsers}
               onAddUser={handleAddUser}
+              infoText={infoText}
             />
             <Button
               size={"icon"}
