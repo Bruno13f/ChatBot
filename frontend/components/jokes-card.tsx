@@ -2,8 +2,8 @@
 
 import * as React from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardFooter } from "@/components/ui/card"
-import { H3 } from "@/components/ui/typography"
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { H4 } from "@/components/ui/typography"
 import { JokesCarousel } from "./jokes-carousel"
 import { Loader2 } from "lucide-react"
 
@@ -57,8 +57,10 @@ export function JokesCard({userId}: JokesCardProps) {
 
   return (
     <Card className="flex-1 p-4 flex flex-col h-100 md:h-170 lg:h-180">
+      <CardHeader>
+        <CardTitle><H4>History of Jokes</H4></CardTitle>
+      </CardHeader>
       <CardContent className="flex-1 pt-4">
-        <H3>History of Jokes</H3>
         {fetching ? (
         <div className="flex justify-center items-center h-full">
           <Loader2 className="animate-spin text-gray-500 w-6 h-6" />

@@ -51,13 +51,13 @@ export function MainCard({userId}: MainCardProps) {
             <TabsTrigger value="jokes">Jokes</TabsTrigger>
             <TabsTrigger value="weather">Weather</TabsTrigger>
           </TabsList>
-          <TabsContent value="jokes">
-            <JokesCard userId={userId} />
-          </TabsContent>
           <TabsContent value="chat">
-            <ChatCard userId={userId}/>
+            <ChatCard userId={userId} /*group={groups[0]}*//>
           </TabsContent>
           <TabsContent value="openai">
+            <JokesCard userId={userId} />
+          </TabsContent>
+          <TabsContent value="jokes">
             <JokesCard userId={userId} />
           </TabsContent>
           <TabsContent value="weather">

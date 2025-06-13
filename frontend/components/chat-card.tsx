@@ -5,16 +5,19 @@ import * as React from "react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { MessageCard } from "@/components/message-card"
-import { Card, CardContent, CardFooter } from "@/components/ui/card"
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Loader2 } from "lucide-react"
 import { getJokeSocket, disconnectJokeSocket } from "@/lib/socket-jokes"
 import { getWeatherSocket, disconnectWeatherSocket } from "@/lib/socket-weather"
+import { Group } from "@/models/group"
+import { H4 } from "@/components/ui/typography"
 
 interface ChatCardProps {
   userId: string
+  //group: Group
 }
 
-export function ChatCard({userId}: ChatCardProps) { 
+export function ChatCard({userId /*, group*/}: ChatCardProps) { 
 
   const [messages, setMessages] = React.useState<Array<{text: string, sender: string, isWeather: boolean}>>([]);
   const [message, setMessage] = React.useState("");
@@ -249,6 +252,9 @@ export function ChatCard({userId}: ChatCardProps) {
 
   return (
     <Card className="flex-1 p-4 flex flex-col h-100 md:h-170 lg:h-180">
+      <CardHeader>
+        <CardTitle><H4>Group Name</H4></CardTitle>
+      </CardHeader>
       <CardContent className="flex-1 flex flex-col items-center relative w-full">
         <div className={`absolute top-0 left-0 right-0 h-full w-full overflow-y-auto px-4 flex justify-center ${fetching ? "items-center" : "items-start"}`}>
           {fetching ? (
