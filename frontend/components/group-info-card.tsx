@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Combobox } from "@/components/ui/combobox"
 import { Group } from "@/models/group"
+import { deleteGroup } from "@/services/groups"
 
 const avatars = [
   { img: "https://github.com/shadcn.png", fallback: "CN", color: "bg-indigo-500" },
@@ -43,14 +44,28 @@ const avatars = [
 
 interface GroupInfoCardProps {
   group: Group;
+  userId: string;
+  onGroupDeleted?: (groupId: string) => void;
 }
 
-export function GroupInfoCard({ group }: GroupInfoCardProps) {
+export function GroupInfoCard({ group, userId, onGroupDeleted }: GroupInfoCardProps) {
   let [showEditGroup, setShowEditGroup] = React.useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false)
 
-  const handleDeleteGroup = () => {
-    console.log("Delete group!", group._id)
+  const isOwner = group.owner === userId;
+
+  const handleDeleteGroup = async () => {
+    try {
+      await deleteGroup(group._id);
+      setIsDialogOpen(false);
+      if (onGroupDeleted) onGroupDeleted(group._id);
+    } catch (err) {
+      alert("Failed to delete group.");
+    }
+  }
+
+  const handleLeaveGroup = () => {
+    console.log("Leave group!", group._id)
   }
 
   return (
@@ -63,30 +78,31 @@ export function GroupInfoCard({ group }: GroupInfoCardProps) {
         <h1 className="text-[1rem] font-regular mt-4">{group.name}</h1>
         <h2 className="text-sm font-regular text-muted-foreground">{group.members.length} members</h2>
         <div className="flex flex-row gap-2 mt-4">
-          <Button variant="outline" className="cursor-pointer" onClick={() => setShowEditGroup(true)}><Pencil/>Edit</Button>
+          <Button variant="outline" className="cursor-pointer" onClick={() => setShowEditGroup(true)} disabled={!isOwner}><Pencil/>Edit</Button>
           <AlertDialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <AlertDialogTrigger asChild>
               <Button
                 variant="outline"
                 onClick={() => setIsDialogOpen(true)}
-                title="Logout"
+                title={isOwner ? "Delete group" : "Leave group"}
                 className="cursor-pointer"
               >
-                <Trash2/>Delete
+                {isOwner ? <Trash2/> : <span>Leave</span>}
+                {isOwner ? "Delete" : "Leave"}
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
                 <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Do you really want to delete it?
+                  {isOwner ? "Do you really want to delete this group?" : "Do you really want to leave this group?"}
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel onClick={() => setIsDialogOpen(false)}>
                   Cancel
                 </AlertDialogCancel>
-                <AlertDialogAction onClick={handleDeleteGroup}>
+                <AlertDialogAction onClick={isOwner ? handleDeleteGroup : handleLeaveGroup}>
                   Yes
                 </AlertDialogAction>
               </AlertDialogFooter>

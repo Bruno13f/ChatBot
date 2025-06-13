@@ -69,12 +69,19 @@ export function MainCard({userId}: MainCardProps) {
       </div>
       {/* GroupInfoCard: only visible on large screens */}
       <div className="hidden lg:flex w-1/6 items-center justify-center">
-        {selectedGroup && <GroupInfoCard group={selectedGroup} />}
+        {selectedGroup && <GroupInfoCard group={selectedGroup} userId={userId} onGroupDeleted={(groupId) => {
+          setGroups(prev => prev.filter(g => g._id !== groupId));
+          setSelectedGroup(prev => prev && prev._id === groupId ? null : prev);
+        }} />}
       </div>
       {/* Overlay for sm/md */}
       {showInfoPanel && selectedGroup && (
         <CardWidget onClose={() => setShowInfoPanel(false)}>
-          <GroupInfoCard group={selectedGroup} />
+          <GroupInfoCard group={selectedGroup} userId={userId} onGroupDeleted={(groupId) => {
+            setGroups(prev => prev.filter(g => g._id !== groupId));
+            setSelectedGroup(prev => prev && prev._id === groupId ? null : prev);
+            setShowInfoPanel(false);
+          }} />
         </CardWidget>
       )}
     </div>
