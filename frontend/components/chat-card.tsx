@@ -125,7 +125,7 @@ export function ChatCard({ user, group }: ChatCardProps) {
     //   disconnectWeatherSocket();
     // };
 
-  }, []);
+  }, [group?._id]); // Only depend on the group ID
 
   React.useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });

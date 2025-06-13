@@ -47,7 +47,6 @@ exports.getMessages = async (req, res) => {
     }
 
     const messages = await Message.find({ groupId }).sort({ timestamp: 1 });
-    console.log("Messages fetched from database: ", messages);
 
     const formatted = messages.map(formatMessage);
     console.log("✅ Messages fetched successfully");
