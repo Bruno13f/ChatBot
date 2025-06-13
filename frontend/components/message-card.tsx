@@ -20,9 +20,10 @@ interface ChatCardProps {
   message: string;
   isSystem?: boolean;
   isWeather: boolean;
+  timestamp?: string | Date;
 }
 
-export function MessageCard({ message, isSystem = false, isWeather }: ChatCardProps) {
+export function MessageCard({ message, isSystem = false, isWeather, timestamp }: ChatCardProps) {
   const { theme } = useTheme();
   const isDark = theme === "dark";
 
@@ -112,6 +113,13 @@ export function MessageCard({ message, isSystem = false, isWeather }: ChatCardPr
     },
   };
 
+  // Formatar o timestamp para HH:MM
+  let timeString = "";
+  if (timestamp) {
+    const date = new Date(timestamp);
+    timeString = date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  }
+
   return (
     <div className={`max-w-[100%] break-words whitespace-normal flex flex-col gap-2 rounded-lg px-3 py-2 text-sm ${
       isSystem 
@@ -124,6 +132,9 @@ export function MessageCard({ message, isSystem = false, isWeather }: ChatCardPr
         </div>
       ) : (
         <ReactMarkdown>{message}</ReactMarkdown>
+      )}
+      {timeString && (
+        <div className="text-xs text-gray-400 mt-1 text-right">{timeString}</div>
       )}
     </div>
   );

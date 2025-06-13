@@ -317,6 +317,7 @@ export function ChatCard({ user, group }: ChatCardProps) {
                     message={msg.message}
                     isSystem={msg.sender.name === "system"}
                     isWeather={msg.isWeather}
+                    timestamp={msg.timestamp}
                   />
                 ))
               ) : (
