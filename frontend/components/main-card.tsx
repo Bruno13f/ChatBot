@@ -54,7 +54,7 @@ export function MainCard({userId}: MainCardProps) {
             <TabsTrigger value="weather">Weather</TabsTrigger>
           </TabsList>
           <TabsContent value="chat">
-            {selectedGroup && <ChatCard userId={userId} group={selectedGroup} />}
+            <ChatCard userId={userId} group={selectedGroup} />
           </TabsContent>
           <TabsContent value="openai">
             <JokesCard userId={userId} />

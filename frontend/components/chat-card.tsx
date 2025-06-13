@@ -11,10 +11,11 @@ import { getJokeSocket, disconnectJokeSocket } from "@/lib/socket-jokes"
 import { getWeatherSocket, disconnectWeatherSocket } from "@/lib/socket-weather"
 import { Group } from "@/models/group"
 import { H4 } from "@/components/ui/typography"
+import { TabsContent } from "@/components/ui/tabs"
 
 interface ChatCardProps {
-  userId: string
-  group: Group
+  userId: string;
+  group: Group | null;
 }
 
 export function ChatCard({userId, group}: ChatCardProps) { 
@@ -26,6 +27,8 @@ export function ChatCard({userId, group}: ChatCardProps) {
   const messagesEndRef = React.useRef<HTMLDivElement | null>(null);
   const validDays = ['1', '3', '7', '14', '16'];
   console.log("userId", userId);
+
+  const noGroupSelected = !group;
 
   React.useEffect(() => {
     const fetchMessages = async () => {
@@ -253,7 +256,7 @@ export function ChatCard({userId, group}: ChatCardProps) {
   return (
     <Card className="flex-1 p-4 flex flex-col h-100 md:h-170 lg:h-180">
       <CardHeader>
-        <CardTitle><H4>{group.name}</H4></CardTitle>
+        <CardTitle><H4>{noGroupSelected ? 'Group Name' : group.name}</H4></CardTitle>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col items-center relative w-full">
         <div className={`absolute top-0 left-0 right-0 h-full w-full overflow-y-auto px-4 flex justify-center ${fetching ? "items-center" : "items-start"}`}>
@@ -261,7 +264,11 @@ export function ChatCard({userId, group}: ChatCardProps) {
             <Loader2 className="animate-spin text-gray-500 w-6 h-6" />
           ) : (
             <div className="space-y-4 w-full flex flex-col items-end relative min-h-full">
-              {messages.length > 0 ? (
+              {noGroupSelected ? (
+                <div className="flex items-center justify-center w-full h-full absolute inset-0">
+                  <span className="text-gray-500 text-center">Please select a group to start chatting.</span>
+                </div>
+              ) : messages.length > 0 ? (
                 messages.map((msg, index) => (
                   <MessageCard 
                     key={index} 
@@ -277,8 +284,6 @@ export function ChatCard({userId, group}: ChatCardProps) {
               )}
               <div ref={messagesEndRef} />
             </div>
-
-            
           )}
         </div>
       </CardContent>
