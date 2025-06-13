@@ -1,4 +1,5 @@
 import * as React from "react"
+import toast from 'react-hot-toast';
 
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
@@ -22,7 +23,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Combobox } from "@/components/ui/combobox"
 import { Group } from "@/models/group"
-import { deleteGroup } from "@/services/groups"
+import { deleteGroup, updateGroup } from "@/services/groups"
 
 const avatars = [
   { img: "https://github.com/shadcn.png", fallback: "CN", color: "bg-indigo-500" },
@@ -46,9 +47,10 @@ interface GroupInfoCardProps {
   group: Group;
   userId: string;
   onGroupDeleted?: (groupId: string) => void;
+  onGroupUpdated?: (group: Group) => void;
 }
 
-export function GroupInfoCard({ group, userId, onGroupDeleted }: GroupInfoCardProps) {
+export function GroupInfoCard({ group, userId, onGroupDeleted, onGroupUpdated }: GroupInfoCardProps) {
   let [showEditGroup, setShowEditGroup] = React.useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false)
 
@@ -58,6 +60,7 @@ export function GroupInfoCard({ group, userId, onGroupDeleted }: GroupInfoCardPr
     try {
       await deleteGroup(group._id);
       setIsDialogOpen(false);
+      toast.success('Group deleted successfully!');
       if (onGroupDeleted) onGroupDeleted(group._id);
     } catch (err) {
       alert("Failed to delete group.");
@@ -113,8 +116,15 @@ export function GroupInfoCard({ group, userId, onGroupDeleted }: GroupInfoCardPr
           <CardWidget onClose={() => setShowEditGroup(false)}>
             <GroupActions
               isCreate={false}
-              onSubmit={async (name: string) => {
-                console.log("Group name updated to:", name);
+              onSubmit={async (name: string, picture?: string) => {
+                try {
+                  const updated = await updateGroup(group._id, name, picture);
+                  setShowEditGroup(false);
+                  toast.success('Group updated successfully!');
+                  if (onGroupUpdated) onGroupUpdated(updated);
+                } catch (err) {
+                  toast.error('Failed to update group.');
+                }
               }}
             />
           </CardWidget>

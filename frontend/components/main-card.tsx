@@ -72,6 +72,9 @@ export function MainCard({userId}: MainCardProps) {
         {selectedGroup && <GroupInfoCard group={selectedGroup} userId={userId} onGroupDeleted={(groupId) => {
           setGroups(prev => prev.filter(g => g._id !== groupId));
           setSelectedGroup(prev => prev && prev._id === groupId ? null : prev);
+        }} onGroupUpdated={(updated) => {
+          setGroups(prev => prev.map(g => g._id === updated._id ? updated : g));
+          setSelectedGroup(updated);
         }} />}
       </div>
       {/* Overlay for sm/md */}
@@ -80,6 +83,10 @@ export function MainCard({userId}: MainCardProps) {
           <GroupInfoCard group={selectedGroup} userId={userId} onGroupDeleted={(groupId) => {
             setGroups(prev => prev.filter(g => g._id !== groupId));
             setSelectedGroup(prev => prev && prev._id === groupId ? null : prev);
+            setShowInfoPanel(false);
+          }} onGroupUpdated={(updated) => {
+            setGroups(prev => prev.map(g => g._id === updated._id ? updated : g));
+            setSelectedGroup(updated);
             setShowInfoPanel(false);
           }} />
         </CardWidget>
