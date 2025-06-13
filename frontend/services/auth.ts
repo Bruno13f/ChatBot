@@ -10,14 +10,14 @@ export async function login(email: string, password: string) {
     return res;
 }
 
-export async function signup(email: string, password: string) {
+export async function signup(email: string, password: string, name: string) {
 
     const res = await fetch(`${BACKEND_URI}/sign-up`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, name }),
       });
 
       if (!res.ok) {

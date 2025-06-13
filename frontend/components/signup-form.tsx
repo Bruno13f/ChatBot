@@ -22,11 +22,13 @@ export function SignUpForm({
   ...props
 }: React.ComponentPropsWithoutRef<"div">) {
   const [email, setEmail] = useState("")
+  const [name, setName] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [errorEmail, setErrorEmail] = useState<string | null>(null)
   const [errorPassword, setErrorPassword] = useState<string | null>(null)
   const [errorConfirmPassword, setErrorConfirmPassword] = useState<string | null>(null)
+  const [errorName, setErrorName] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const router = useRouter()
 
@@ -35,12 +37,24 @@ export function SignUpForm({
     e.preventDefault()
     setErrorEmail(null)
     setErrorPassword(null)
+    setErrorConfirmPassword(null)
+    setErrorName(null)
     setLoading(true)
 
     // Email validation regex (basic check)
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!email || !emailRegex.test(email)) {
       setErrorEmail("Please enter a valid email address.")
+      setLoading(false)
+      return
+    }
+
+    if (!name) {
+      setErrorName("Name is required.")
+      setLoading(false)
+      return
+    } else if (name.length > 20) {
+      setErrorName("Name must be at less than 20 characters long.")
       setLoading(false)
       return
     }
@@ -68,7 +82,7 @@ export function SignUpForm({
         throw new Error('Backend URI is not defined');
       }
 
-      await signup(email, password);
+      await signup(email, password, name);
       
       toast.success('Account created successfully!', {
         style: {
@@ -144,6 +158,10 @@ export function SignUpForm({
     if (errorConfirmPassword) setErrorConfirmPassword(null) // Only reset error if the password has an error
   }
 
+  const handleNameFocus = () => {
+    if (errorName) setErrorName(null) // Only reset error if the name has an error
+  }
+
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card className="py-6">
@@ -174,6 +192,24 @@ export function SignUpForm({
 
               {errorEmail && (
                 <div className="text-sm text-red-500 -mt-2">{errorEmail}</div>
+              )}
+
+              <div className="grid gap-2">
+                <Label htmlFor="name">Name</Label>
+                <Input
+                  id="name"
+                  type="text"
+                  placeholder="Name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  onFocus={handleNameFocus} // Reset error on focus
+                  aria-invalid={!!errorName && !name}
+                  className={cn(errorName ? "border-red-500" : "")} // Apply red border if errorName exists
+                />
+              </div>
+
+              {errorName && (
+                <div className="text-sm text-red-500 -mt-2">{errorName}</div>
               )}
 
               <div className="grid gap-2">

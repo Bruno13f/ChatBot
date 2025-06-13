@@ -30,10 +30,10 @@ exports.login = async (req, res) => {
 };
 
 exports.signUp = async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, name } = req.body;
 
-  if (!email || !password) {
-    return res.status(400).json({ message: 'Email and password are required' });
+  if (!email || !password || !name) {
+    return res.status(400).json({ message: 'Email, name and password are required' });
   }
 
   const existingUser = await User.findOne({ email });
@@ -41,7 +41,7 @@ exports.signUp = async (req, res) => {
 
   const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
 
-  await User.create({ email, password: passwordHash});
+  await User.create({ email, password: passwordHash, name });
   res.status(201).json({ message: 'User registered successfully' });
 };
 

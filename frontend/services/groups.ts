@@ -1,8 +1,17 @@
 const BACKEND_URI = process.env.NEXT_PUBLIC_BACKEND_URI;
-const token = localStorage.getItem('token');
-const userId = localStorage.getItem('userId');
 
 export async function getGroups() {
+    // Only access localStorage on the client
+    if (typeof window === "undefined") return; // SSR guard
+
+    const token = localStorage.getItem('token');
+    const userId = localStorage.getItem('userId');
+
+    if (!token || !userId) {
+        window.location.href = "/login";
+        return;
+    }
+
     const res = await fetch(`${BACKEND_URI}/users/${userId}/groups`, {
         method: 'GET',
         headers: {
@@ -17,6 +26,15 @@ export async function getGroups() {
 }
 
 export async function createGroup(name: string) {
+    if (typeof window === "undefined") return; // SSR guard
+
+    const token = localStorage.getItem('token');
+    const userId = localStorage.getItem('userId');
+
+    if (!token || !userId) {
+        window.location.href = "/login";
+        return;
+    }
 
     const res = await fetch(`${BACKEND_URI}/groups`, {
         method: 'POST',
@@ -30,12 +48,4 @@ export async function createGroup(name: string) {
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || 'Something went wrong.');
     return data.group;
-}
-
-export async function deleteGroup() {
-    
-}
-
-export async function leaveGroup() {
-    
 }

@@ -10,13 +10,15 @@ const User = require('../models/User');
 const formatGroup = (group) => ({
     _id: group._id,
     name: group.name,
-    members: group.members,
+    members: group.members.map(member => ({
+        _id: member._id,
+        name: member.name
+    })),
     owner: group.owner,
     picture: group.picture,
 });
 
 exports.getGroupsFromUser = async (req, res) => {
-
     const userId = req.params.userId;
 
     if (!userId) {
@@ -39,7 +41,8 @@ exports.getGroupsFromUser = async (req, res) => {
         return res.status(401).json({ message: 'Unauthorized' });
     }
 
-    const groups = await Group.find({ members: userId });
+    // Populate members with _id and name
+    const groups = await Group.find({ members: userId }).populate('members', '_id name');
     const formattedGroups = groups.map(formatGroup);
 
     console.log("✅ Groups fetched successfully");
@@ -47,7 +50,6 @@ exports.getGroupsFromUser = async (req, res) => {
 }
 
 exports.createGroup = async (req, res) => {
-
     const { name } = req.body;
 
     console.log("\n🤼 Creating group with name: ", name);
@@ -68,12 +70,15 @@ exports.createGroup = async (req, res) => {
         const group = await new Group({ name, owner: user._id, members: [user._id] }).save();
         user.groups.push(group._id);
         await user.save();
+
+        // Populate members with _id and name
+        const populatedGroup = await Group.findById(group._id).populate('members', '_id name');
+
         console.log("✅ Group created successfully");
-        res.json({ success: true, message: 'Group created successfully', group: formatGroup(group) });
+        res.json({ success: true, message: 'Group created successfully', group: formatGroup(populatedGroup) });
     } catch (err) {
         console.log("❌ Error creating group: ", err);
         res.status(500).json({ error: 'Failed to create group', details: err.message });
     }
-
 }
 

@@ -59,20 +59,20 @@ export function GroupCard({ group, maxAvatars = 5 }: GroupCardProps) {
         <div className="flex flex-row items-center justify-start gap-x-2 pl-4 py-4">
             {group.members.length > 1 ? (
               <AvatarGroup className="flex items-center" max={maxAvatarsLocal}>
-                {group.members.map((memberId) => (
-                  <Avatar key={memberId} className="-ml-2 first:ml-0 cursor-pointer">
-                    <AvatarImage src={`/api/users/${memberId}/avatar`} alt={`User ${memberId}`} />
-                    <AvatarFallback className={`${getRandomColor(memberId)} text-white`}>
-                      {getInitials(memberId)}
+                {group.members.map((member) => (
+                  <Avatar key={member._id} className="-ml-2 first:ml-0 cursor-pointer">
+                    <AvatarImage src={`/api/users/${member._id}/avatar`} alt={`User ${member._id}`} />
+                    <AvatarFallback className={`${getRandomColor(member._id)} text-white`}>
+                      {getInitials(member.name)}
                     </AvatarFallback>
                   </Avatar>
                 ))}
               </AvatarGroup>
             ) : (
               <Avatar className="cursor-pointer">
-                <AvatarImage src={`/api/users/${group.members[0]}/avatar`} alt={`User ${group.members[0]}`} />
-                <AvatarFallback className={`${getRandomColor(group.members[0])} text-white`}>
-                  {getInitials(group.members[0])}
+                <AvatarImage src={`/api/users/${group.members[0]._id}/avatar`} alt={`User ${group.members[0]._id}`} />
+                <AvatarFallback className={`${getRandomColor(group.members[0]._id)} text-white`}>
+                  {getInitials(group.members[0].name)}
                 </AvatarFallback>
               </Avatar>
             )}
