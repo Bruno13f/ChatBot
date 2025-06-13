@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Combobox } from "@/components/ui/combobox"
 import { Group } from "@/models/group"
-import { deleteGroup, updateGroup } from "@/services/groups"
+import { deleteGroup, updateGroup, addUserToGroup } from "@/services/groups"
 import { getAllUsers } from "@/services/users"
 
 const avatars = [
@@ -55,6 +55,7 @@ export function GroupInfoCard({ group, userId, onGroupDeleted, onGroupUpdated }:
   let [showEditGroup, setShowEditGroup] = React.useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [allUsers, setAllUsers] = useState<{ _id: string; name: string }[]>([]);
+  const [selectedUserId, setSelectedUserId] = useState<string>("");
   const isOwner = group.owner === userId;
 
   React.useEffect(() => {
@@ -70,8 +71,19 @@ export function GroupInfoCard({ group, userId, onGroupDeleted, onGroupUpdated }:
   }, []);
 
   const handleAddUser = async (userId: string) => {
-    // TODO: Implementar chamada para adicionar usuário ao grupo
-    toast.success('User added to group! (mock)');
+    setSelectedUserId(userId);
+  };
+
+  const handleAddUserButton = async () => {
+    if (!selectedUserId) return;
+    try {
+      const updatedGroup = await addUserToGroup(group._id, selectedUserId);
+      toast.success('User added to group!');
+      setSelectedUserId("");
+      if (onGroupUpdated) onGroupUpdated(updatedGroup);
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to add user to group.');
+    }
   };
 
   const handleDeleteGroup = async () => {
@@ -149,14 +161,21 @@ export function GroupInfoCard({ group, userId, onGroupDeleted, onGroupUpdated }:
         )}
 
         <div className="flex flex-row justify-center items-center pl-8 pr-4 mt-10 gap-x-2"> 
-          <Combobox
-            groupMembers={group.members}
-            users={allUsers}
-            onAddUser={handleAddUser}
-          />
-          <Button size={"icon"} className="cursor-pointer bg-green-600 hover:bg-green-700">
-            <Send className="text-white"/>
-          </Button>
+          {isOwner && <>
+            <Combobox
+              groupMembers={group.members}
+              users={allUsers}
+              onAddUser={handleAddUser}
+            />
+            <Button
+              size={"icon"}
+              className="cursor-pointer bg-green-600 hover:bg-green-700"
+              onClick={handleAddUserButton}
+              disabled={!selectedUserId}
+            >
+              <Send className="text-white"/>
+            </Button>
+          </>}
         </div>
         <div className="flex flex-col items-start w-full mt-8">
           <h1 className="text-[1rem] font-regular">Members</h1>

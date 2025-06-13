@@ -179,3 +179,51 @@ exports.deleteGroup = async (req, res) => {
       .json({ error: "Failed to delete group", details: err.message });
   }
 };
+
+/**
+ * Add member to group
+ */
+exports.addMemberToGroup = async (req, res) => {
+  const groupId = req.params.groupId;
+  const { userId } = req.body;
+  const user = req.user;
+
+  if (!groupId || !userId) {
+    return res.status(400).json({ message: "Missing groupId or userId" });
+  }
+
+  try {
+    const group = await Group.findById(groupId);
+    if (!group) {
+      return res.status(404).json({ message: "Group not found" });
+    }
+    // Só owner pode adicionar membros
+    if (group.owner.toString() !== user._id.toString()) {
+      return res
+        .status(403)
+        .json({ message: "Only the group owner can add members." });
+    }
+    // Não adicionar duplicados
+    if (group.members.includes(userId)) {
+      return res
+        .status(400)
+        .json({ message: "User is already a member of the group." });
+    }
+    group.members.push(userId);
+    await group.save();
+    // Popula membros para resposta
+    const populatedGroup = await Group.findById(groupId).populate(
+      "members",
+      "_id name"
+    );
+    res.json({
+      success: true,
+      message: "User added to group successfully",
+      group: formatGroup(populatedGroup),
+    });
+  } catch (err) {
+    res
+      .status(500)
+      .json({ error: "Failed to add user to group", details: err.message });
+  }
+};

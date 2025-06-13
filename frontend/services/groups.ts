@@ -94,3 +94,23 @@ export async function deleteGroup(groupId: string) {
     }
     return true;
 }
+
+export async function addUserToGroup(groupId: string, userId: string) {
+    if (typeof window === "undefined") return;
+    const token = localStorage.getItem('token');
+    if (!token) {
+        window.location.href = "/login";
+        return;
+    }
+    const res = await fetch(`${BACKEND_URI}/groups/${groupId}/add-member`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ userId }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to add user to group.');
+    return data.group;
+}
