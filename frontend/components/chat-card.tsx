@@ -16,7 +16,6 @@ import { Loader2 } from "lucide-react";
 import { Group } from "@/models/group";
 import { H4 } from "@/components/ui/typography";
 import {
-  disconnectMiddlewareSocket,
   getMiddlewareSocket,
   initMiddlewareSocket,
 } from "@/lib/socket-middleware";
@@ -41,11 +40,20 @@ export function ChatCard({
   const [message, setMessage] = React.useState("");
   const [loading, setLoading] = React.useState(false);
   const [fetching, setFetching] = React.useState(true);
+  const [textareaKey, setTextareaKey] = React.useState(0);
   const messagesEndRef = React.useRef<HTMLDivElement | null>(null);
-  const validDays = ["1", "3", "7", "14", "16"];
-  const isFirstRender = React.useRef(true);
+  const textareaRef = React.useRef<HTMLTextAreaElement | null>(null);
 
   const noGroupSelected = !group;
+
+  // Focus textarea function
+  const focusTextarea = React.useCallback(() => {
+    if (textareaRef.current) {
+      setTimeout(() => {
+        textareaRef.current?.focus();
+      }, 0);
+    }
+  }, []);
 
   function smoothScrollToBottom(container: HTMLElement, duration = 1000) {
     const start = container.scrollTop;
@@ -73,7 +81,9 @@ export function ChatCard({
 
   // Effect for initial mount and socket setup
   React.useEffect(() => {
-    const middlewareSocket = initMiddlewareSocket((message) => {
+    if (!user || !group) return;
+
+    initMiddlewareSocket((message) => {
       // Add the message to the messages list
       setMessages((prevMessages) => [
         ...prevMessages,
@@ -89,31 +99,29 @@ export function ChatCard({
           isJoke: message.isJoke,
           isWeather: message.isWeather,
           isOpenAI: message.isOpenAI,
-          groupId: group?._id || "",
+          groupId: group._id || "",
         },
       ]);
       setLoading(false); // Stop loading when we receive the response
     });
 
-    let backendSocket: any;
-    if (user && group) {
-      backendSocket = initBackendSocket(user._id, group._id, (message) => {
-        // Evita duplicação: não adiciona mensagem se for do próprio usuário
-        if (message.sender && message.sender.userId === user._id) return;
-        if (message.sender.name.toLowerCase() === "system") {
-          return;
-        }
-        setMessages((prevMessages) => [...prevMessages, message]);
-        setLoading(false);
-        if (onMessageSentOrReceived) onMessageSentOrReceived();
-      });
-    }
+    initBackendSocket(user._id, group._id, (message) => {
+      // Evita duplicação: não adiciona mensagem se for do próprio usuário
+      if (message.sender && message.sender.userId === user._id) return;
+      if (message.sender.name.toLowerCase() === "system") {
+        return;
+      }
+      setMessages((prevMessages) => [...prevMessages, message]);
+      setLoading(false);
+      if (onMessageSentOrReceived) onMessageSentOrReceived();
+    });
+
     return () => {
-      if (backendSocket && group) {
+      if (group) {
         leaveBackendGroup(group._id);
       }
     };
-  }, [user?._id, group?._id]); // Empty dependency array means this runs on mount
+  }, [user, group, onMessageSentOrReceived]);
 
   // Effect for fetching messages when group changes
   React.useEffect(() => {
@@ -133,7 +141,6 @@ export function ChatCard({
         }
 
         const data = await getMessagesOfGroup(group._id);
-        console.log("Messages fetched from API: ", data);
 
         // Format messages for our new structure
         const formattedMessages = data.map((msgObj: Message) => ({
@@ -156,7 +163,7 @@ export function ChatCard({
     };
 
     fetchMessages();
-  }, [group?._id]); // Only depend on the group ID
+  }, [group]);
 
   React.useEffect(() => {
     const container = document.querySelector(
@@ -212,9 +219,9 @@ export function ChatCard({
 
   const saveMessageToAPI = async (message: string, sender: string) => {
     if (!message.trim()) return;
-    if (!user) return;
+    if (!user || !group) return false;
 
-    const token = localStorage.getItem("token"); // or use cookies, context, etc.
+    const token = localStorage.getItem("token");
 
     if (!token) {
       throw new Error("No token found");
@@ -222,7 +229,7 @@ export function ChatCard({
 
     try {
       const data = await postMessage(
-        group!._id,
+        group._id,
         message,
         sender,
         false,
@@ -245,6 +252,9 @@ export function ChatCard({
         },
       ]);
       setMessage("");
+      setTextareaKey((prev) => prev + 1); // Force textarea recreation with auto-focus
+      // Focus the textarea after message is sent
+      focusTextarea();
       if (onMessageSentOrReceived) onMessageSentOrReceived();
       return true;
     } catch (error) {
@@ -257,7 +267,7 @@ export function ChatCard({
     <Card className="flex-1 p-4 flex flex-col h-100 md:h-170 lg:h-180">
       <CardHeader>
         <CardTitle>
-          <H4>{noGroupSelected ? "" : group.name}</H4>
+          <H4>{noGroupSelected ? "" : group?.name}</H4>
         </CardTitle>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col items-center relative w-full">
@@ -301,6 +311,9 @@ export function ChatCard({
       <CardFooter>
         <div className="grid w-full gap-2">
           <Textarea
+            key={textareaKey}
+            ref={textareaRef}
+            autoFocus
             className="resize-none w-full"
             text={message}
             setText={setMessage}
