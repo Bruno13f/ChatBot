@@ -45,119 +45,65 @@ console.log(
 // Initialize socket connection
 const socket = io(CONFIG.middlewareUri);
 
+// Command help information
+const commandHelp = {
+  [CONFIG.command]: {
+    description: "Get a random joke",
+    usage: `!joke [category (${CONFIG.validCategories.join(", ")})]`,
+    examples: ["!joke", "!joke programming", "!joke pun"],
+    category: "Jokes",
+  },
+};
+
 // Socket event handlers
 const setupSocketHandlers = () => {
   socket.on("connect", () => {
     console.log(`Connected to middleware registered command ${CONFIG.command}`);
-    socket.emit("register", [CONFIG.command]);
+
+    // Register command with help information
+    socket.emit("register", {
+      commands: [CONFIG.command],
+      help: commandHelp,
+    });
   });
 
   socket.on("disconnect", () => {
     console.log("Disconnected from middleware");
   });
 
-  socket.on("process_command", handleCommand);
-};
+  // Listen for command processing requests from the middleware
+  socket.on("process_command", async (data) => {
+    console.log("Processing command:", data);
 
-// Command handler
-const handleCommand = async (data) => {
-  const { command, args, originalMessage } = data;
+    const { command, args, originalMessage } = data;
 
-  if (command.toLowerCase() !== CONFIG.command.toLowerCase()) return;
+    try {
+      // Process joke command
+      const jokeText = await processJokeCommand(args);
 
-  console.log(`Processing ${CONFIG.command} command:`, args);
-
-  try {
-    const category = args[0]?.toLowerCase();
-
-    if (category && !CONFIG.validCategories.includes(category)) {
-      await sendResponse(
-        `**⚠️ Invalid Category:** Available categories are ${CONFIG.validCategories.join(
-          ", "
-        )}.`,
-        originalMessage,
-        false
-      );
-      return;
-    }
-
-    const joke = await fetchJoke(category);
-    await sendResponse(`🤣 **Joke:**\n\n${joke}`, originalMessage, true);
-  } catch (error) {
-    console.error("Error fetching joke:", error);
-    await sendResponse(
-      "😢 Sorry, I couldn't fetch a joke right now. Please try again later!",
-      originalMessage,
-      false
-    );
-  }
-};
-
-// Joke API interaction
-const fetchJoke = async (category) => {
-  const url = category
-    ? `${CONFIG.jokeApiBaseUrl}/${category}`
-    : `${CONFIG.jokeApiBaseUrl}/Any?safe-mode`;
-
-  console.log("Fetching joke from:", url);
-  const response = await fetch(url);
-  const joke = await response.json();
-  console.log("Joke:", joke);
-
-  if (joke.error) {
-    throw new Error(joke.message);
-  }
-
-  if (joke.type === "single") {
-    return joke.joke;
-  }
-  return `${joke.setup}\n\n${joke.delivery}`;
-};
-
-// Response handling
-const sendResponse = async (text, originalMessage, isJoke) => {
-  // Save to API
-  await saveToAPI(text, originalMessage, isJoke);
-
-  // Emit to middleware
-  socket.emit("service_response", {
-    text,
-    isJoke,
-    isWeather: false,
-    isOpenAI: false,
-    originalMessage: {
-      clientId: originalMessage.clientId,
-    },
-  });
-};
-
-// API interaction
-const saveToAPI = async (message, originalMessage, isJoke) => {
-  const { groupId, token } = originalMessage;
-
-  const response = await fetch(
-    `${CONFIG.backendUri}/groups/${groupId}/messages`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        message,
-        sender: "system",
-        isJoke,
+      // Send the response back to the middleware
+      socket.emit("service_response", {
+        text: jokeText,
+        isJoke: true,
         isWeather: false,
         isOpenAI: false,
-      }),
-    }
-  );
+        originalMessage,
+      });
 
-  const data = await response.json();
-  if (!response.ok) {
-    throw new Error(data.message || "Something went wrong.");
-  }
-  return data;
+      // Save joke to database
+      await saveJokeToDatabase(jokeText, originalMessage);
+    } catch (error) {
+      console.error("Error processing joke command:", error);
+
+      socket.emit("service_response", {
+        text: `Failed to fetch joke: ${error.message}`,
+        isJoke: true,
+        isWeather: false,
+        isOpenAI: false,
+        originalMessage,
+      });
+    }
+  });
 };
 
 // Start the service

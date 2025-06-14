@@ -35,6 +35,16 @@ console.log(
 // Initialize geocoder
 const geocoder = NodeGeocoder(CONFIG.geocoderOptions);
 
+// Command help information
+const commandHelp = {
+  [CONFIG.command]: {
+    description: "Get a weather report for a city",
+    usage: `!weather <city> <days (${CONFIG.validDays.join(", ")})>`,
+    examples: ["!weather London 3", "!weather New York 7"],
+    category: "Weather",
+  },
+};
+
 // Initialize socket connection
 const socket = io(CONFIG.middlewareUri);
 
@@ -42,7 +52,12 @@ const socket = io(CONFIG.middlewareUri);
 const setupSocketHandlers = () => {
   socket.on("connect", () => {
     console.log(`Connected to middleware registered command ${CONFIG.command}`);
-    socket.emit("register", [CONFIG.command]);
+
+    // Register command with help information
+    socket.emit("register", {
+      commands: [CONFIG.command],
+      help: commandHelp,
+    });
   });
 
   socket.on("disconnect", () => {

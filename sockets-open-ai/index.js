@@ -33,14 +33,31 @@ verifyConfig();
 
 console.log(
   "OpenAI socket starting with config: ",
-  JSON.stringify({
-    middlewareUri: CONFIG.middlewareUri,
-    backendUri: CONFIG.backendUri,
-    command: CONFIG.command,
-    model: CONFIG.model,
-    openAiKey: "...REDACTED..."
-  }, null, 2)
+  JSON.stringify(
+    {
+      middlewareUri: CONFIG.middlewareUri,
+      backendUri: CONFIG.backendUri,
+      command: CONFIG.command,
+      model: CONFIG.model,
+      openAiKey: "...REDACTED...",
+    },
+    null,
+    2
+  )
 );
+
+// Command help information
+const commandHelp = {
+  [CONFIG.command]: {
+    description: "Ask a question to AI assistant",
+    usage: "!openai <your question>",
+    examples: [
+      "!openai What is the capital of France?",
+      "!openai Tell me a short story",
+    ],
+    category: "AI",
+  },
+};
 
 // Initialize OpenAI client
 const openai = new OpenAI({
@@ -54,7 +71,12 @@ const socket = io(CONFIG.middlewareUri);
 const setupSocketHandlers = () => {
   socket.on("connect", () => {
     console.log(`Connected to middleware registered command ${CONFIG.command}`);
-    socket.emit("register", [CONFIG.command]);
+
+    // Register command with help information
+    socket.emit("register", {
+      commands: [CONFIG.command],
+      help: commandHelp,
+    });
   });
 
   socket.on("disconnect", () => {
