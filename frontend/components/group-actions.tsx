@@ -121,6 +121,13 @@ export function GroupActions({
     if (errorName) setErrorName(null);
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleOnSubmit(e);
+    }
+  };
+
   return (
     <div className="flex flex-col mt-4 gap-y-2">
       <div className="flex flex-col items-start gap-2 ml-4 mb-4">
@@ -181,6 +188,7 @@ export function GroupActions({
           value={name}
           onChange={(e) => setName(e.target.value)}
           onFocus={handleNameFocus} // Reset error on focus
+          onKeyDown={handleKeyDown} // Handle Enter key press
           aria-invalid={!!errorName && name.length > 30}
           className={cn(errorName ? "border-red-500" : "")}
         />
