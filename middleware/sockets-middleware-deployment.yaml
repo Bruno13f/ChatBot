@@ -21,14 +21,12 @@ spec:
         io.kompose.service: sockets-middleware
     spec:
       containers:
-        - envFrom:
+        - name: sockets-middleware
+          image: projeto-cn-sockets-middleware:latest
+          imagePullPolicy: Never
+          envFrom:
             - configMapRef:
-                name: env
-            - secretRef:
-                name: app-secrets
-          image: lucasremigio/chatbot-middleware:latest
-          name: sockets-middleware
+                name: env-configmap
           ports:
             - containerPort: 8000
-              protocol: TCP
       restartPolicy: Always

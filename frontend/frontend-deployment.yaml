@@ -21,21 +21,12 @@ spec:
         io.kompose.service: frontend
     spec:
       containers:
-        - env:
-            - name: NEXT_PUBLIC_BACKEND_URI
-              value: http://backend:9000/api
-            - name: NEXT_PUBLIC_SOCKET_JOKES_URI
-              value: http://sockets-jokes:4000
-            - name: NEXT_PUBLIC_SOCKET_WEATHER_URI
-              value: http://sockets-weather:4001
+        - name: frontend
+          image: projeto-cn-frontend:latest
+          imagePullPolicy: Never
           envFrom:
             - configMapRef:
-                name: env
-            - secretRef:
-                name: app-secrets
-          image: lucasremigio/chatbot-frontend:latest
-          name: frontend
+                name: env-configmap
           ports:
             - containerPort: 3000
-              protocol: TCP
       restartPolicy: Always

@@ -21,17 +21,12 @@ spec:
         io.kompose.service: sockets-jokes
     spec:
       containers:
-        - env:
-            - name: SOCKET_MIDDLEWARE_URI
-              value: http://sockets-middleware:8000
+        - name: sockets-jokes
+          image: projeto-cn-sockets-jokes:latest
+          imagePullPolicy: Never
           envFrom:
             - configMapRef:
-                name: env
-            - secretRef:
-                name: app-secrets
-          image: lucasremigio/chatbot-sockets-jokes:latest
-          name: sockets-jokes
+                name: env-configmap
           ports:
             - containerPort: 4000
-              protocol: TCP
       restartPolicy: Always

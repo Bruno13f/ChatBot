@@ -21,17 +21,12 @@ spec:
         io.kompose.service: sockets-open-ai
     spec:
       containers:
-        - env:
-            - name: SOCKET_MIDDLEWARE_URI
-              value: http://sockets-middleware:8000
+        - name: sockets-open-ai
+          image: projeto-cn-sockets-open-ai:latest
+          imagePullPolicy: Never
           envFrom:
             - configMapRef:
-                name: env
-            - secretRef:
-                name: app-secrets
-          image: lucasremigio/chatbot-sockets-openai:latest
-          name: sockets-open-ai
+                name: env-configmap
           ports:
             - containerPort: 4002
-              protocol: TCP
       restartPolicy: Always

@@ -21,19 +21,12 @@ spec:
         io.kompose.service: backend
     spec:
       containers:
-        - env:
-            - name: SOCKETS_JOKES_URI
-              value: http://sockets-jokes:4000
-            - name: SOCKETS_WEATHER_URI
-              value: http://sockets-weather:4001
+        - name: backend
+          image: projeto-cn-backend:latest
+          imagePullPolicy: Never
           envFrom:
             - configMapRef:
-                name: env
-            - secretRef:
-                name: app-secrets
-          image: lucasremigio/chatbot-backend:latest
-          name: backend
+                name: env-configmap
           ports:
             - containerPort: 9000
-              protocol: TCP
       restartPolicy: Always

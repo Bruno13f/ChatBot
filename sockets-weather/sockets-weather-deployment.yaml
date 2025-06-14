@@ -21,18 +21,12 @@ spec:
         io.kompose.service: sockets-weather
     spec:
       containers:
-        - env:
-            - name: SOCKET_MIDDLEWARE_URI
-              value: http://sockets-middleware:8000
+        - name: sockets-weather
+          image: projeto-cn-sockets-weather:latest
+          imagePullPolicy: Never
           envFrom:
             - configMapRef:
-                name: env
-            - secretRef:
-                name: app-secrets
-          image: lucasremigio/chatbot-sockets-weather:latest
-          imagePullPolicy: Never
-          name: sockets-weather
+                name: env-configmap
           ports:
             - containerPort: 4001
-              protocol: TCP
       restartPolicy: Always

@@ -1,0 +1,19 @@
+kubectl apply -f secrets.yaml
+kubectl apply -f configmap.yaml
+
+kubectl apply -f frontend/frontend-service.yaml
+kubectl apply -f backend/backend-service.yaml
+kubectl apply -f middleware/sockets-middleware-service.yaml
+kubectl apply -f sockets-jokes/sockets-jokes-service.yaml
+kubectl apply -f sockets-weather/sockets-weather-service.yaml
+kubectl apply -f sockets-open-ai/sockets-open-ai-service.yaml
+
+kubectl apply -f frontend/frontend-deployment.yaml
+kubectl apply -f backend/backend-deployment.yaml
+kubectl apply -f middleware/sockets-middleware-deployment.yaml
+kubectl apply -f sockets-jokes/sockets-jokes-deployment.yaml
+kubectl apply -f sockets-weather/sockets-weather-deployment.yaml
+kubectl apply -f sockets-open-ai/sockets-open-ai-deployment.yaml
+
+minikube addons enable ingress
+kubectl apply -f ingress.yaml
