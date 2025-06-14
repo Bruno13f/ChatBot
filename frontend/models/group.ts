@@ -10,4 +10,5 @@ export interface Group {
   groupPicture?: string;
   createdAt?: Date;
   updatedAt?: Date;
+  messageCount?: number;
 }

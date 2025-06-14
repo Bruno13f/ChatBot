@@ -49,10 +49,17 @@ exports.getGroupsFromUser = async (req, res) => {
     "members",
     "_id name profilePicture"
   );
-  const formattedGroups = groups.map(formatGroup);
+
+  // Buscar contagem de mensagens para cada grupo
+  const groupsWithMessageCount = await Promise.all(
+    groups.map(async (group) => {
+      const messageCount = await Message.countDocuments({ groupId: group._id });
+      return { ...formatGroup(group), messageCount };
+    })
+  );
 
   console.log("✅ Groups fetched successfully");
-  res.json(formattedGroups);
+  res.json(groupsWithMessageCount);
 };
 
 exports.createGroup = async (req, res) => {
@@ -317,12 +324,10 @@ exports.deleteGroup = async (req, res) => {
       console.log("✅ All messages deleted successfully");
     } catch (messageError) {
       console.log("❌ Error deleting group messages:", messageError);
-      res
-        .status(500)
-        .json({
-          error: "Failed to delete group",
-          details: messageError.message,
-        });
+      res.status(500).json({
+        error: "Failed to delete group",
+        details: messageError.message,
+      });
     }
 
     // Delete group picture from Azure if it exists
