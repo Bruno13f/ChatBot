@@ -43,7 +43,7 @@ export function JokesCard({user, group}: JokesCardProps) {
   }, []);
 
   return (
-    <Card className="flex-1 p-4 flex flex-col h-100 md:h-170 lg:h-180">
+    <Card className="flex-1 p-4 flex flex-col h-120 md:h-170 lg:h-180">
       <CardHeader>
         <CardTitle><H4>History of Jokes</H4></CardTitle>
       </CardHeader>

@@ -8,15 +8,15 @@ import { JokesCarousel } from "./jokes-carousel"
 import { Loader2 } from "lucide-react"
 import { User } from "@/models/user"
 import { Group } from "@/models/group"
-import { getOpenAIMessagesOfGroup } from "@/services/messages"
+import { getWeatherMessagesFromGroup } from "@/services/messages"
 import { MessageCard } from "./message-card"
 
-interface OpenAICardProps {
+interface WeatherCardProps {
   user: User | null;
   group: Group | null;
 }
 
-interface OpenAIMessage {
+interface WeatherMessage {
   prompt: {
     message: string;
     timestamp: string;
@@ -27,8 +27,8 @@ interface OpenAIMessage {
   };
 }
 
-export function OpenAICard({user, group}: OpenAICardProps) {
-  const [openAIMessages, setOpenAIMessages] = React.useState<OpenAIMessage[]>([]);
+export function WeatherCard({user, group}: WeatherCardProps) {
+  const [weatherMessages, setWeatherMessages] = React.useState<WeatherMessage[]>([]);
   const [fetching, setFetching] = React.useState(true);
 
   function smoothScrollToBottom(container: HTMLElement, duration = 1000) {
@@ -55,27 +55,27 @@ export function OpenAICard({user, group}: OpenAICardProps) {
     requestAnimationFrame((startTime) => animateScroll(startTime));
   }
 
-  const fetchOpenAIMessages = async () => {
+  const fetchWeatherMessages = async () => {
     if (!user) return;
     setFetching(true);
 
     try {
-      const data = await getOpenAIMessagesOfGroup(group?._id || "");
+      const data = await getWeatherMessagesFromGroup(group?._id || "");
       if (data.length === 0) {
         setFetching(false);
         return;
       }
-      console.log("OpenAI data:", data);
-      setOpenAIMessages(data);
+      console.log("Weather data:", data);
+      setWeatherMessages(data);
     } catch (error) {
-      console.error("Failed to fetch OpenAI messages:", error);
+      console.error("Failed to fetch weather messages:", error);
     } finally {
       setFetching(false);
     }
   }
 
   React.useEffect(() => {
-    fetchOpenAIMessages();
+    fetchWeatherMessages();
   }, [group?._id]);
 
   React.useEffect(() => {
@@ -86,55 +86,55 @@ export function OpenAICard({user, group}: OpenAICardProps) {
     if (container) {
       smoothScrollToBottom(container);
     }
-  }, [openAIMessages]);
+  }, [weatherMessages]);
 
   return (
     <Card className="flex-1 p-4 flex flex-col h-120 md:h-170 lg:h-180">
       <CardHeader>
-        <CardTitle><H4>OpenAI History</H4></CardTitle>
+        <CardTitle><H4>Weather Forecasts History</H4></CardTitle>
       </CardHeader>
-      <CardContent className="flex-1 pb-4 md:py-10 lg:py-10 h-[90%]">
+      <CardContent className="flex-1 pb-4 md:py-10 lg:py-10 h-[90%] items-center">
         <div
-          className={`flex flex-col items-center h-full w-full ${
-            openAIMessages.length > 0 ? "justify-start" : "justify-center"
-          }`}
+        className={`flex flex-col items-center h-full w-full ${
+            weatherMessages.length > 0 ? "justify-start" : "justify-center"
+        }`}
         >
-          {fetching ? (
+        {fetching ? (
             <Loader2 className="animate-spin text-gray-500 w-6 h-6" />
-          ) : openAIMessages.length > 0 ? (
+        ) : weatherMessages.length > 0 ? (
             <div className="scroll-container space-y-4 w-full flex flex-col items-end overflow-y-auto px-4">
-              {openAIMessages.map((msg, index) => (
+            {weatherMessages.map((msg, index) => (
                 <div key={index} className="w-full space-y-2">
-                  {msg.prompt && (
+                {msg.prompt && (
                     <MessageCard
-                      message={msg.prompt.message}
-                      isFromOwner={true}
-                      isWeather={false}
-                      timestamp={msg.prompt.timestamp}
-                      sender={{
+                    message={msg.prompt.message}
+                    isFromOwner={true}
+                    isWeather={false}
+                    timestamp={msg.prompt.timestamp}
+                    sender={{
                         name: user?.name || "User",
                         profilePicture: user?.profilePicture || "",
-                      }}
+                    }}
                     />
-                  )}
-                  <MessageCard
+                )}
+                <MessageCard
                     message={msg.response.message}
                     isFromOwner={false}
-                    isWeather={false}
+                    isWeather={true}
                     timestamp={msg.response.timestamp}
                     sender={{
-                      name: "OpenAI",
-                      profilePicture: "",
+                    name: "system",
+                    profilePicture: "",
                     }}
-                  />
+                />
                 </div>
-              ))}
+            ))}
             </div>
-          ) : (
-            <span className="text-xl text-gray-500">No OpenAI interactions</span>
-          )}
+        ) : (
+            <span className="text-xl text-gray-500">No Weather forecasts</span>
+        )}
         </div>
-      </CardContent>
+    </CardContent>
 
     </Card>
   )

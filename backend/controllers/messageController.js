@@ -225,7 +225,7 @@ exports.getOpenAI = async (req, res) => {
     // Get all OpenAI messages
     const openAIMessages = await Message.find({ groupId, isOpenAI: true })
       .select("message timestamp -_id")
-      .sort({ timestamp: -1 });
+      .sort({ timestamp: 1 });
 
     // Get all messages to find the prompts
     const allMessages = await Message.find({ groupId })
@@ -262,3 +262,67 @@ exports.getOpenAI = async (req, res) => {
       .json({ error: "Failed to get OpenAI messages", details: err.message });
   }
 };
+
+
+exports.getWeather = async (req, res) => {
+  const groupId = req.params.groupId;
+
+  console.log("\n🤼 Getting Weather messages from group: ", groupId);
+
+  if (!groupId) {
+    console.log("❌ Missing group id");
+    return res.status(400).json({ error: "Missing group id" });
+  }
+
+  const group = await Group.findById(groupId);
+  if (!group) {
+    console.log("❌ Group not found");
+    return res.status(404).json({ error: "Group not found" });
+  }
+
+  const user = req.user;
+  if (!group.members.includes(user._id)) {
+    console.log("❌ User is not a member of the group");
+    return res.status(403).json({ error: "User is not a member of the group" });
+  }
+
+  try {
+    // Get all Weather messages
+    const weatherMessages = await Message.find({ groupId, isWeather: true })
+      .select("message timestamp -_id")
+      .sort({ timestamp: 1 });
+
+    // Get all messages to find the prompts
+    const allMessages = await Message.find({ groupId })
+      .select("message timestamp -_id")
+      .sort({ timestamp: -1 });
+
+    // Format Weather messages with their prompts
+    const formattedWeather = await Promise.all(weatherMessages.map(async (weatherMsg) => {
+      // Find the last message before this Weather response that contains "!weather"
+      const promptMessage = allMessages.find(msg =>
+        msg.timestamp < weatherMsg.timestamp &&
+        msg.message.toLowerCase().includes("!weather")
+      );
+
+      return {
+        prompt: promptMessage ? {
+          message: promptMessage.message,
+          timestamp: promptMessage.timestamp
+        } : null,
+        response: {
+          message: weatherMsg.message,
+          timestamp: weatherMsg.timestamp
+        }
+      };
+    }));
+
+    console.log("✅ Weather messages fetched successfully");
+    res.json(formattedWeather);
+
+  } catch (err) {
+    console.log("❌ Failed to get Weather messages", err);
+    res.status(500).json({ error: "Failed to get Weather messages", details: err.message });
+  }
+};
+

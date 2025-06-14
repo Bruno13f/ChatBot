@@ -146,8 +146,11 @@ export function MessageCard({ message, isFromOwner, isWeather, timestamp, sender
     };
 
     return (
-      <div className="w-full h-[300px]">
-        <Line data={chartData} options={chartOptions} />
+      <div className="w-full flex flex-col justify-center items-center h-[300px] gap-2">
+        <div className="text-sm font-medium text-center w-full">System</div>
+        <div className="w-full md:w-[90%] lg:w-[80%] bg-secondary px-3 py-2 rounded-lg h-full">
+          <Line data={chartData} options={chartOptions}/>
+        </div>
       </div>
     )
   }

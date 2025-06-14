@@ -81,7 +81,8 @@ export function GroupsCard({
               <Button
                 size="icon"
                 className="size-6 lg:hidden cursor-pointer"
-                onClick={onInfoClick}>
+                onClick={onInfoClick}
+                disabled={selectedGroupId == undefined}>
                 <Info strokeWidth={"3"} />
               </Button>
             </div>

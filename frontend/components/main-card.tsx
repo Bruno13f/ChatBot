@@ -16,6 +16,7 @@ import { User } from "@/models/user";
 import { useGroupSocket } from "@/lib/use-group-socket";
 import { Message } from "@/models/message";
 import { OpenAICard } from "@/components/openai-card";
+import { WeatherCard } from "./weather-card";
 
 interface MainCardProps {
   userId: string;
@@ -243,7 +244,7 @@ export function MainCard({ userId }: MainCardProps) {
             <JokesCard user={user} group={selectedGroup} />
           </TabsContent>
           <TabsContent value="weather">
-            <JokesCard user={user} group={selectedGroup} />
+            <WeatherCard user={user} group={selectedGroup} />
           </TabsContent>
         </Tabs>
       </div>

@@ -290,7 +290,7 @@ export function ChatCard({
   };
 
   return (
-    <Card className="flex-1 p-4 flex flex-col h-100 md:h-170 lg:h-180">
+    <Card className="flex-1 p-4 flex flex-col h-120 md:h-170 lg:h-180">
       <CardHeader>
         <CardTitle>
           <H4>{noGroupSelected ? "" : group?.name}</H4>
@@ -306,7 +306,7 @@ export function ChatCard({
           ) : (
             <div className="space-y-4 w-full flex flex-col items-end relative min-h-full">
               {noGroupSelected ? (
-                <div className="flex items-center justify-center w-full h-full absolute inset-0">
+                <div className="flex items-center justify-center w-full h-full absolute inset-0 pt-7">
                   <span className="text-gray-500 text-center">
                     Please select a group to start chatting.
                   </span>

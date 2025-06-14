@@ -6,10 +6,12 @@ const NodeGeocoder = require("node-geocoder");
 const CONFIG = {
   middlewareUri: process.env.SOCKET_MIDDLEWARE_URI || "http://localhost:8000",
   backendUri: process.env.BACKEND_URI || "http://localhost:8000",
+  nodegeocoder_api_key: process.env.NODEGEOCODER_API_KEY,
   command: "!weather",
   validDays: [1, 3, 7, 14, 16],
   geocoderOptions: {
-    provider: "openstreetmap",
+    provider: "opencage",
+    apiKey: process.env.nodegeocoder_api_key,
   },
 };
 
@@ -19,6 +21,9 @@ const verifyConfig = () => {
   }
   if (!CONFIG.backendUri) {
     throw new Error("BACKEND_URI is not set");
+  }
+  if (!CONFIG.nodegeocoder_api_key) {
+    throw new Error("NODEGEOCODER_API_KEY is not set");
   }
   if (!CONFIG.command) {
     throw new Error("COMMAND is not set");

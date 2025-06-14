@@ -7,7 +7,6 @@ import {
   CarouselApi, 
 } from "@/components/ui/carousel"
 
-// Define the prop type for JokesCarousel
 interface JokesCarouselProps {
   jokes: string[];
 }
@@ -17,12 +16,12 @@ export function JokesCarousel({ jokes }: JokesCarouselProps) {
 
   const scrollToStart = () => {
     if (carouselApi) {
-      carouselApi.scrollTo(0) // Scroll to the first item
+      carouselApi.scrollTo(0)
     }
   }
 
   React.useEffect(() => {
-    scrollToStart() // Scroll to the first item
+    scrollToStart()
   }, [jokes]) 
 
   return (
@@ -31,10 +30,10 @@ export function JokesCarousel({ jokes }: JokesCarouselProps) {
         align: "start",
       }}
       orientation="vertical"
-      className="w-full mt-4 md:mt-0 lg:mt-0"
+      className="w-full h-full" // Add h-full here
       setApi={setCarouselApi}
     >
-      <CarouselContent className="-mt-2 h-[580] space-y-1">
+      <CarouselContent className="h-full flex-1 -mt-2 space-y-1"> {/* Add h-full flex-1 */}
         {jokes.length > 0 ? (
           jokes.map((joke, index) => (
             <CarouselItem key={index} className="!basis-auto">
