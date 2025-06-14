@@ -17,7 +17,7 @@ RUN chmod +x /usr/local/bin/backup-database.sh
 # Create entrypoint script that sets up cron with env vars at runtime
 RUN echo '#!/bin/bash\n\
     echo "Creating cron job with environment variables..."\n\
-    echo "* 15 * * * root MONGO_URI=\"$MONGO_URI\" MONGO_BACKUP_URI=\"$MONGO_BACKUP_URI\" /usr/local/bin/backup-database.sh >> /var/log/backup.log 2>&1" > /etc/cron.d/mongodb-backup\n\
+    echo "0 2 * * * root MONGO_URI=\"$MONGO_URI\" MONGO_BACKUP_URI=\"$MONGO_BACKUP_URI\" /usr/local/bin/backup-database.sh >> /var/log/backup.log 2>&1" > /etc/cron.d/mongodb-backup\n\
     chmod 0644 /etc/cron.d/mongodb-backup\n\
     echo "Starting cron daemon..."\n\
     exec cron -f' > /usr/local/bin/entrypoint.sh
