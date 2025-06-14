@@ -25,9 +25,10 @@ import { initBackendSocket, leaveBackendGroup } from "@/lib/socket-backend";
 interface ChatCardProps {
   user: User | null;
   group: Group | null;
+  onMessageSentOrReceived?: () => void;
 }
 
-export function ChatCard({ user, group }: ChatCardProps) {
+export function ChatCard({ user, group, onMessageSentOrReceived }: ChatCardProps) {
   const [messages, setMessages] = React.useState<Message[]>([]);
   const [message, setMessage] = React.useState("");
   const [loading, setLoading] = React.useState(false);
@@ -72,6 +73,7 @@ export function ChatCard({ user, group }: ChatCardProps) {
         if (message.sender && message.sender.userId === user._id) return;
         setMessages((prevMessages) => [...prevMessages, message]);
         setLoading(false);
+        if (onMessageSentOrReceived) onMessageSentOrReceived();
       });
     }
     return () => {
@@ -188,7 +190,6 @@ export function ChatCard({ user, group }: ChatCardProps) {
       throw new Error("No token found");
     }
 
-
     try {
       const data = await postMessage(group!._id, message, sender, false, false, false, user._id);
 
@@ -197,6 +198,7 @@ export function ChatCard({ user, group }: ChatCardProps) {
         { _id: data._id, timestamp: data.timestamp, message: data.message, sender: data.sender, isJoke: data.isJoke, isWeather: data.isWeather, isOpenAI: data.isOpenAI, groupId: data.groupId },
       ]);
       setMessage("");
+      if (onMessageSentOrReceived) onMessageSentOrReceived();
       return true;
     } catch (error) {
       console.error("Error saving message to API:", error);
