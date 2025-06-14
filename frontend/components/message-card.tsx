@@ -88,10 +88,9 @@ export function MessageCard({ message, isFromOwner, isWeather, timestamp, sender
 
   // Map the temperatures to colors
   const pointBackgroundColor = isDark ? '#27272a' : '#ffffff';
-  const borderColor = isDark ? '#C1C1C3FF' : '#29292FFF';
-  const backgroundColor = isDark ? '#C1C1C3FF' : '#29292FFF';
-  const gridColor = backgroundColor;
-  const textColor = isDark ? '#27272a' : '#ffffff';
+  const borderColor = isDark ? '#EEEBEBFF' : '#29292FFF';
+  const backgroundColor = isDark ? '#EEEBEBFF' : '#29292FFF';
+  const gridColor = isDark ? '#C1C1C3FF' : '#29292FFF';;
 
   const chartData = {
     labels,
@@ -115,7 +114,7 @@ export function MessageCard({ message, isFromOwner, isWeather, timestamp, sender
     plugins: {
       legend: {
         labels: {
-          color: textColor,
+          color: !isDark ? '#000' : '#EEEBEBFF',
         },
       },
       tooltip: {
@@ -127,7 +126,7 @@ export function MessageCard({ message, isFromOwner, isWeather, timestamp, sender
     scales: {
       x: {
         ticks: {
-          color: textColor,
+          color: !isDark ? '#000' : '#EEEBEBFF',
         },
         grid: {
           color: gridColor,
@@ -135,7 +134,7 @@ export function MessageCard({ message, isFromOwner, isWeather, timestamp, sender
       },
       y: {
         ticks: {
-          color: textColor,
+          color: !isDark ? '#000' : '#EEEBEBFF',
         },
         grid: {
           color: gridColor,

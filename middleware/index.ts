@@ -65,7 +65,7 @@ io.on("connection", (socket) => {
   });
 
   // Handle incoming messages
-  socket.on("message", (message) => {
+  socket.on("message", async (message) => {
     console.log("Received message:", message);
 
     // Only process messages that start with a command
@@ -77,7 +77,27 @@ io.on("connection", (socket) => {
     const args = message.text.split(" ").slice(1);
 
     // Check if command is registered
-    if (socketRegistry[command]) {
+    if (command === "!help") {
+      const helpMessage =
+          `🤖 **Available Commands:**\n\n` +
+          `**JOKES 🤣**\n` +
+          `- \`!joke\` → Get a random joke\n\n` +
+          `- \`!joke category\` → Get a joke from a specific category\n\n` +
+          `  **Available categories:** programming, misc, dark, pun, spooky, christmas\n\n` +
+          `  **Example:** \!joke programming\n\n` +
+          `**WEATHER ⛅**\n` +
+          `- \`!weather city days\` → Get a weather report for a city for the next specified number of days\n\n` +
+          `  **Days:** 1, 3, 7, 14, 16\n\n` +
+          `  **Example:** \`!weather London 3\``;
+
+      await saveMessageToAPI(helpMessage, message.groupId, message.token);
+      socket.emit("message", { 
+        text: helpMessage,
+        isJoke: false,
+        isWeather: false,
+        isOpenAI: false
+      });
+    } else if (socketRegistry[command]) {
       console.log(`Routing command ${command} to service socket ${socketRegistry[command].socketId}`);
       
       // Forward the message to the appropriate service socket
@@ -93,6 +113,7 @@ io.on("connection", (socket) => {
       // Command not found
       const newMessage = `🤖 **Unknown Command:**\n\nType \`!help\` to see available commands.`;
       // Send response back to the frontend client
+      await saveMessageToAPI(newMessage, message.groupId, message.token);
       socket.emit("message", { 
         text: newMessage,
         isJoke: false,
@@ -117,7 +138,29 @@ io.on("connection", (socket) => {
   });
 });
 
-const port = 8000;
+const saveMessageToAPI = async (message: string, groupId: string, token: string) => {
+  const backendUrl = process.env.BACKEND_URI || "http://localhost:8000";
+  const res = await fetch(`${backendUrl}/groups/${groupId}/messages`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`
+    },
+    body: JSON.stringify({
+      message: message,
+      sender: "system",
+      isJoke: false,
+      isWeather: false,
+      isOpenAI: false
+    })
+  });
+  const data = await res.json() as { message?: string };
+  if (!res.ok) throw new Error(data.message || "Something went wrong.");
+  return data;
+}
+
+
+const port = process.env.SOCKET_MIDDLEWARE_PORT || 8000;
 httpServer.listen(port, () => {
   console.log(`Socket.IO server started on http://localhost:${port}`);
 });

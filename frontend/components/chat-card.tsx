@@ -175,24 +175,6 @@ export function ChatCard({ user, group }: ChatCardProps) {
         return;
       }
 
-      if (messageTrim === "!help") {
-        const newMessage =
-          `🤖 **Available Commands:**\n\n` +
-          `**JOKES 🤣**\n` +
-          `- \`!joke\` → Get a random joke\n\n` +
-          `- \`!joke category\` → Get a joke from a specific category\n\n` +
-          `  **Available categories:** programming, misc, dark, pun, spooky, christmas\n\n` +
-          `  **Example:** \!joke programming\n\n` +
-          `**WEATHER ⛅**\n` +
-          `- \`!weather city days\` → Get a weather report for a city for the next specified number of days\n\n` +
-          `  **Days:** 1, 3, 7, 14, 16\n\n` +
-          `  **Example:** \`!weather London 3\``;
-
-        await saveMessageToAPI(newMessage, "system");
-        setLoading(false);
-        return;
-      }
-
       if (messageTrim.startsWith("!") && middlewareSocket) {
         middlewareSocket.emit("message", {
           text: message,
@@ -203,86 +185,6 @@ export function ChatCard({ user, group }: ChatCardProps) {
         });
       }
 
-      // const parts = messageTrim.split(" ");
-      // if (parts[0] === "!joke") {
-      //   const validCategories = [
-      //     "programming",
-      //     "misc",
-      //     "dark",
-      //     "pun",
-      //     "spooky",
-      //     "christmas",
-      //   ];
-
-      //   if (parts[1] && !validCategories.includes(parts[1])) {
-      //     const newMessage = `**⚠️ Invalid Category:** Available categories are programming, misc, dark, pun, spooky, christmas.`;
-      //     await saveMessageToAPI(newMessage, "system");
-      //     setLoading(false);
-      //     return;
-      //   }
-
-      //   const socket = getJokeSocket();
-
-      //   Emit message to server
-      //   socket.emit("message", {
-      //     text: message,
-      //     sender: "user",
-      //     token,
-      //     userId,
-      //   });
-
-      //   Wait for the joke response from the socket before enabling the button
-      //   socket.on("message", (newMessage) => {
-      //     if (newMessage.sender === "system") {
-      //       setLoading(false);
-      //     }
-      //   });
-
-      //   return;
-      // }
-
-      // if (parts[0] === "!weather") {
-      //   if (!parts[1] || !parts[2]) {
-      //     const newMessage = "**⚠️ Usage:** `!weather <city> <days>`";
-      //     await saveMessageToAPI(newMessage, "system");
-      //     setLoading(false);
-      //     return;
-      //   }
-
-      //   if (!validDays.includes(parts[2])) {
-      //     const newMessage = "**⚠️ Invalid Days:** 1, 3, 7, 14, 16";
-      //     await saveMessageToAPI(newMessage, "system");
-      //     setLoading(false);
-      //     return;
-      //   }
-
-      //   const socket = getWeatherSocket();
-
-      //   socket.emit("message", {
-      //     text: message,
-      //     sender: "user",
-      //     token,
-      //     userId,
-      //   });
-
-      //   socket.on("message", (newMessage) => {
-      //     if (newMessage.sender === "system") {
-      //       setLoading(false);
-      //     }
-      //   });
-
-      //   return;
-      // }
-
-      // if (messageTrim.startsWith("!")) {
-      //   const newMessage =
-      //     `🤖 **Unknown Command:**\n\n` +
-      //     `Type \`!help\` to see available commands.`;
-
-      //   await saveMessageToAPI(newMessage, "system");
-      //   setLoading(false);
-      //   return;
-      // }
     } catch (error) {
       console.error("Error sending message:", error);
       setLoading(false);
