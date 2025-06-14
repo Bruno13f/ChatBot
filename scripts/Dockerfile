@@ -1,27 +1,27 @@
 FROM ubuntu:22.04
 
-# Install required packages
+# Install dependencies and add MongoDB repository
 RUN apt-get update && apt-get install -y \
     cron \
     curl \
     gnupg \
+    && curl -fsSL https://pgp.mongodb.com/server-7.0.asc | gpg -o /usr/share/keyrings/mongodb-server-7.0.gpg --dearmor \
+    && echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-7.0.gpg ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/7.0 multiverse" | tee /etc/apt/sources.list.d/mongodb-org-7.0.list \
+    && apt-get update \
+    && apt-get install -y mongodb-database-tools \
     && rm -rf /var/lib/apt/lists/*
 
-# Install MongoDB Database Tools
-RUN curl -fsSL https://pgp.mongodb.com/server-7.0.asc | gpg -o /usr/share/keyrings/mongodb-server-7.0.gpg --dearmor
-RUN echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-7.0.gpg ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/7.0 multiverse" | tee /etc/apt/sources.list.d/mongodb-org-7.0.list
-RUN apt-get update && apt-get install -y mongodb-database-tools
-
-# Copy the backup script
-COPY backup-database.sh /usr/local/bin/backup-database.sh
+COPY backup-database.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/backup-database.sh
 
-# Create cron job (runs daily at 2 AM)
-RUN echo "50 14 * * * root /usr/local/bin/backup-database.sh >> /var/log/backup.log 2>&1" > /etc/cron.d/mongodb-backup
-RUN chmod 0644 /etc/cron.d/mongodb-backup
+# Create entrypoint script that sets up cron with env vars at runtime
+RUN echo '#!/bin/bash\n\
+    echo "Creating cron job with environment variables..."\n\
+    echo "* 15 * * * root MONGO_URI=\"$MONGO_URI\" MONGO_BACKUP_URI=\"$MONGO_BACKUP_URI\" /usr/local/bin/backup-database.sh >> /var/log/backup.log 2>&1" > /etc/cron.d/mongodb-backup\n\
+    chmod 0644 /etc/cron.d/mongodb-backup\n\
+    echo "Starting cron daemon..."\n\
+    exec cron -f' > /usr/local/bin/entrypoint.sh
 
-# Create log file
-RUN touch /var/log/backup.log
+RUN chmod +x /usr/local/bin/entrypoint.sh
 
-# Start cron daemon
-CMD ["cron", "-f"]
+CMD ["/usr/local/bin/entrypoint.sh"]
