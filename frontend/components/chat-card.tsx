@@ -163,7 +163,7 @@ export function ChatCard({
     };
 
     fetchMessages();
-  }, [group]);
+  }, [group?._id]);
 
   React.useEffect(() => {
     const container = document.querySelector(
