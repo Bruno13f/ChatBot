@@ -154,8 +154,15 @@ exports.getJokes = async (req, res) => {
     const jokes = await Message.find({ groupId, isJoke: true })
     .select("message timestamp -_id")
     .sort({ timestamp: -1 });
+
+    // Remove the "🤣 **Joke:**" prefix from each joke
+    const formattedJokes = jokes.map(joke => ({
+      ...joke.toObject(),
+      message: joke.message.replace(/^🤣\s*\*\*Joke:\*\*\s*/, '')
+    }));
+
     console.log("✅ Jokes fetched successfully");
-    res.json(jokes);
+    res.json(formattedJokes);
   }catch(err){
     console.log("❌ Failed to get jokes", err);
     res

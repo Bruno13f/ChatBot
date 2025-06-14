@@ -99,10 +99,10 @@ const setupSocketHandlers = () => {
         if (category && !validCategories.includes(category)) {
           console.log("Invalid category:", category);
           const text = `**⚠️ Invalid Category:** Available categories are programming, misc, dark, pun, spooky, christmas.`;
-          await saveJokeToAPI(text, groupId, token, true);
+          await saveJokeToAPI(text, groupId, token, false);
           socket.emit("service_response", {
             text,
-            isJoke: true,
+            isJoke: false,
             isWeather: false,
             isOpenAI: false,
             originalMessage,
@@ -144,10 +144,10 @@ const setupSocketHandlers = () => {
       } catch (error) {
         console.error("Error processing joke command:", error);
         const text = `Failed to fetch joke: ${error.message}`;
-        await saveJokeToAPI(text, groupId, token, true);
+        await saveJokeToAPI(text, groupId, token, false);
         socket.emit("service_response", {
           text,
-          isJoke: true,
+          isJoke: false,
           isWeather: false,
           isOpenAI: false,
           originalMessage,

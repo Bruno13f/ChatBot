@@ -49,7 +49,7 @@ export function JokesCard({user, group}: JokesCardProps) {
       <CardHeader>
         <CardTitle><H4>History of Jokes</H4></CardTitle>
       </CardHeader>
-      <CardContent className="flex-1 pt-4">
+      <CardContent className="flex-1 pt-0 md:pt-4 lg:pt-4 h-full">
         {fetching ? (
         <div className="flex justify-center items-center h-full">
           <Loader2 className="animate-spin text-gray-500 w-6 h-6" />
