@@ -68,4 +68,24 @@ export async function getJokesOfGroup(groupId: string) {
   return data;
 }
 
+export async function getOpenAIMessagesOfGroup(groupId: string) {
+  const token = localStorage.getItem("token");
+  if (!token) {
+    window.location.href = "/login";
+    return;
+  }
+
+  const res = await fetch(`${BACKEND_URI}/groups/${groupId}/openAI`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || "Something went wrong.");
+  return data;
+}
+
   

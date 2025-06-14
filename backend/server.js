@@ -30,19 +30,41 @@ io.on("connection", (socket) => {
 
   // Join group room
   socket.on("joinGroup", (groupId) => {
-    console.log(`User ${socket.userId} joined group ${groupId}`);
+    console.log(`[SOCKET] User ${socket.userId} joined group ${groupId}`);
     socket.join(`group_${groupId}`);
   });
 
   // Leave group room
   socket.on("leaveGroup", (groupId) => {
-    console.log(`User ${socket.userId} left group ${groupId}`);
+    console.log(`[SOCKET] User ${socket.userId} left group ${groupId}`);
     socket.leave(`group_${groupId}`);
   });
 
+  // Handle group membership changes
+  socket.on("addedToGroup", (data) => {
+    const { groupId, userId } = data;
+    console.log(`[SOCKET] User ${userId} added to group ${groupId}`);
+    const userSocketId = userSockets.get(userId);
+    if (userSocketId) {
+      io.to(userSocketId).emit("addedToGroup", { groupId });
+    }
+  });
+
+  socket.on("removedFromGroup", (data) => {
+    const { groupId, userId } = data;
+    console.log(`User ${userId} removed from group ${groupId}`);
+    // Notify the specific user
+    const userSocketId = userSockets.get(userId);
+    if (userSocketId) {
+      io.to(userSocketId).emit("removedFromGroup", { groupId });
+    }
+  });
+
   socket.on("disconnect", () => {
-    console.log(`User ${socket.userId} disconnected`);
-    if (socket.userId) userSockets.delete(socket.userId);
+    console.log(`[SOCKET] User ${socket.userId} disconnected`);
+    if (socket.userId) {
+      userSockets.delete(socket.userId);
+    }
   });
 });
 

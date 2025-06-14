@@ -476,21 +476,24 @@ exports.addMemberToGroup = async (req, res) => {
       } : undefined
     };
 
+    console.log("newMembers", newMembers);
+
     // Emit socket event to new members
     const io = req.app.get("io");
     const userSockets = req.app.get("userSockets");
     if (io && userSockets && Array.isArray(newMembers)) {
       newMembers.forEach((memberId) => {
-        const socketId = userSockets.get(memberId.toString());
+        const socketId = userSockets.get(memberId);
         console.log(
-          `[SOCKET] Emitindo 'addedToGroup' para userId:`,
+          `[SOCKET] Emitting 'addedToGroup' to userId:`,
           memberId,
           "socketId:",
           socketId
         );
         if (socketId) {
+          // Emit to the specific user with the complete group data
           io.to(socketId).emit("addedToGroup", {
-            group: groupForSocket,
+            group: groupForSocket
           });
         }
       });
@@ -554,12 +557,18 @@ exports.leaveGroup = async (req, res) => {
     // Remove grupo da lista do usuário
     user.groups = user.groups.filter((g) => g.toString() !== groupId);
     await user.save();
-    // Emitir evento para todos os membros do grupo
-    io.to(`group_${groupId}`).emit("removedFromGroup", { groupId });
-    console.log(
-      "[SOCKET] Evento 'removedFromGroup' emitido para o grupo",
-      groupId
-    );
+
+    // Only emit to the user who left
+    const userSockets = req.app.get("userSockets");
+    const userSocketId = userSockets.get(user._id);
+    if (userSocketId) {
+      io.to(userSocketId).emit("removedFromGroup", { groupId });
+      console.log(
+        "[SOCKET] Emitted 'removedFromGroup' event to user who left",
+        user._id
+      );
+    }
+
     res.json({ success: true, message: "Left group successfully" });
   } catch (err) {
     console.log("❌ Error leaving group:", err);
@@ -596,22 +605,18 @@ exports.removeMemberFromGroup = async (req, res) => {
     const member = await User.findById(memberId);
     member.groups = member.groups.filter((g) => g.toString() !== groupId);
     await member.save();
-    // Emitir evento para todos os membros do grupo
-    io.to(`group_${groupId}`).emit("removedFromGroup", { groupId });
-    // Emitir evento diretamente para o membro removido (caso não esteja conectado na room)
+
+    // Only emit to the removed member
     const userSockets = req.app.get("userSockets");
     const memberSocketId = userSockets.get(memberId);
     if (memberSocketId) {
       io.to(memberSocketId).emit("removedFromGroup", { groupId });
       console.log(
-        "[SOCKET] Evento 'removedFromGroup' emitido para o membro removido",
+        "[SOCKET] Emitted 'removedFromGroup' event to removed member",
         memberId
       );
     }
-    console.log(
-      "[SOCKET] Evento 'removedFromGroup' emitido para o grupo",
-      groupId
-    );
+
     res.json({
       success: true,
       message: "Member removed from group successfully",

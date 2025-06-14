@@ -1,7 +1,6 @@
 import { useEffect } from "react";
 import { getBackendSocket, initBackendSocket } from "@/lib/socket-backend";
 import { Group } from "@/models/group";
-import { getGroupsOfUser } from "@/services/groups";
 
 export function useGroupSocket(
   userId: string,
@@ -9,37 +8,39 @@ export function useGroupSocket(
   onRemovedFromGroup?: (groupId: string) => void
 ) {
   useEffect(() => {
-    let socket = getBackendSocket();
-    if (!socket) {
-      // Inicializa o socket sem grupo específico
-      socket = initBackendSocket(userId, "", () => {});
-    }
-    if (socket) {
-      const handler = (data: { group: Group }) => {
-        console.log("[SOCKET] Evento 'addedToGroup' recebido:", data);
-        onAddedToGroup(data.group);
-      };
-      socket.on("addedToGroup", handler);
+    // Initialize socket if not exists
+    const socket = getBackendSocket() || initBackendSocket(userId, "", () => {
+      console.log("[SOCKET] Connected to backend");
+    });
 
-      let removedHandler: ((data: { groupId: string }) => void) | undefined;
-      if (onRemovedFromGroup) {
-        removedHandler = async (data: { groupId: string }) => {
-          console.log("[SOCKET] Evento 'removedFromGroup' recebido:", data);
-          // Confirma se o grupo realmente não está mais na lista do usuário
-          const groups = await getGroupsOfUser(userId);
-          const stillInGroup = groups.some((g: Group) => g._id === data.groupId);
-          if (!stillInGroup) {
-            onRemovedFromGroup(data.groupId);
-          } else {
-            console.log("[SOCKET] Ignorado: utilizador ainda pertence ao grupo");
-          }
-        };
-        socket.on("removedFromGroup", removedHandler);
+    // Handle added to group event
+    const addedHandler = (data: { group: Group }) => {
+      console.log("[SOCKET] Added to group event received:", data);
+      if (data.group) {
+        onAddedToGroup(data.group);
       }
-      return () => {
-        socket.off("addedToGroup", handler);
-        if (removedHandler) socket.off("removedFromGroup", removedHandler);
-      };
+    };
+
+    // Handle removed from group event
+    const removedHandler = (data: { groupId: string }) => {
+      console.log("[SOCKET] Removed from group event received:", data);
+      if (onRemovedFromGroup) {
+        onRemovedFromGroup(data.groupId);
+      }
+    };
+
+    // Register event handlers
+    socket.on("addedToGroup", addedHandler);
+    if (onRemovedFromGroup) {
+      socket.on("removedFromGroup", removedHandler);
     }
+
+    // Cleanup
+    return () => {
+      socket.off("addedToGroup", addedHandler);
+      if (onRemovedFromGroup) {
+        socket.off("removedFromGroup", removedHandler);
+      }
+    };
   }, [userId, onAddedToGroup, onRemovedFromGroup]);
 }

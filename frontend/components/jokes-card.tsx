@@ -16,10 +16,8 @@ interface JokesCardProps {
 }
 
 export function JokesCard({user, group}: JokesCardProps) {
-  const [joke, setJoke] = React.useState<string | null>(null)
   const [jokes, setJokes] = React.useState<string[]>([]);
   const [fetching, setFetching] = React.useState(true);
-  const [loading, setLoading] = React.useState(false);
 
   const fetchJokes = async () => {
     if (!user) return;

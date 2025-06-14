@@ -83,76 +83,48 @@ export function ChatCard({
   React.useEffect(() => {
     if (!user || !group) return;
 
-    initMiddlewareSocket((message) => {
-      console.log("message from middleware:", message);
-      console.log("current messages state:", messages);
+    const socket = initBackendSocket(user._id, group._id, () => {
+      console.log("[SOCKET] Connected to backend");
+    });
+
+    // Handle all message types
+    const messageHandler = (message: Message) => {
+      console.log("[SOCKET] Received message:", message);
+
+      if (message.groupId !== group._id) return;
       
-      // Add the message to the messages list
-      const formattedMessage: Message = {
-        _id: Date.now().toString(),
-        timestamp: new Date(),
-        message: message.text,
-        sender: {
-          name: "system",
-          userId: "system",
-          profilePicture: "",
-        },
-        isJoke: message.isJoke || false,
-        isWeather: message.isWeather || false,
-        isOpenAI: message.isOpenAI || false,
-        groupId: group._id || "",
-      };
+      // Skip if message is from the current user
+      if (message.sender && message.sender.userId === user._id) return;
+      
+      // Skip system messages that are already handled by middleware
+      if (message.sender.name.toLowerCase() === "system") return;
 
-      console.log("formatted message:", formattedMessage);
-
-      // Use functional update to ensure we're working with the latest state
       setMessages(prevMessages => {
-        console.log("previous messages:", prevMessages);
-        
         // Check if message already exists to prevent duplicates
         const messageExists = prevMessages.some(
-          msg => msg.message === formattedMessage.message && 
-                 Math.abs(new Date(msg.timestamp).getTime() - formattedMessage.timestamp.getTime()) < 1000
+          msg => msg._id === message._id || 
+                 (msg.message === message.message && 
+                  Math.abs(new Date(msg.timestamp).getTime() - new Date(message.timestamp).getTime()) < 1000)
         );
         
-        console.log("message exists:", messageExists);
-        
         if (messageExists) {
-          console.log("skipping duplicate message");
+          console.log("[SOCKET] Skipping duplicate message");
           return prevMessages;
         }
         
-        const newMessages = [...prevMessages, formattedMessage];
-        console.log("new messages array:", newMessages);
-        return newMessages;
+        return [...prevMessages, message];
       });
 
-      // Force a re-render by updating a state
-      setLoading(prev => !prev);
-      setLoading(prev => !prev);
-
-      setLoading(false); // Stop loading when we receive the response
       if (onMessageSentOrReceived) {
-        console.log("calling onMessageSentOrReceived with:", formattedMessage);
-        onMessageSentOrReceived(formattedMessage);
+        onMessageSentOrReceived(message);
       }
-    });
+    };
 
-    initBackendSocket(user._id, group._id, (message) => {
-      // Evita duplicação: não adiciona mensagem se for do próprio usuário
-      if (message.sender && message.sender.userId === user._id) return;
-      if (message.sender.name.toLowerCase() === "system") {
-        return;
-      }
-      setMessages((prevMessages) => [...prevMessages, message]);
-      setLoading(false);
-      if (onMessageSentOrReceived) onMessageSentOrReceived(message);
-    });
+    socket.on("newMessage", messageHandler);
 
     return () => {
-      if (group) {
-        leaveBackendGroup(group._id);
-      }
+      socket.off("newMessage", messageHandler);
+      leaveBackendGroup(group._id);
     };
   }, [user, group, onMessageSentOrReceived]);
 

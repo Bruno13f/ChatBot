@@ -1,5 +1,5 @@
 import * as React from "react";
-import io from "socket.io-client";
+import { getBackendSocket, initBackendSocket, leaveBackendGroup } from "@/lib/socket-backend";
 
 import { JokesCard } from "@/components/jokes-card";
 import { ChatCard } from "@/components/chat-card";
@@ -15,6 +15,7 @@ import { getUserById } from "@/services/users";
 import { User } from "@/models/user";
 import { useGroupSocket } from "@/lib/use-group-socket";
 import { Message } from "@/models/message";
+import { OpenAICard } from "@/components/openai-card";
 
 interface MainCardProps {
   userId: string;
@@ -32,23 +33,43 @@ export function MainCard({ userId }: MainCardProps) {
   React.useEffect(() => {
     if (!user) return;
 
-    const socket = io(process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:9000");
-    socket.emit("identify", userId);
-
-    // Join all group rooms
-    groups.forEach(group => {
-      socket.emit("joinGroup", group._id);
+    const socket = getBackendSocket() || initBackendSocket(userId, "", () => {
+      console.log("[SOCKET] Connected to backend");
     });
 
-    // Listen for new messages
-    socket.on("newMessage", (message: Message) => {
-      updateGroupLastMessage(message);
-    });
+    // Handle group updates (e.g., new last message)
+    const groupUpdateHandler = (data: { groupId: string; lastMessage: any }) => {
+      console.log("[SOCKET] Group update received:", data);
+      setGroups(prev => prev.map(group => {
+        if (group._id === data.groupId) {
+          console.log("[SOCKET] Updating group:", group._id, "with new last message:", data.lastMessage);
+          return {
+            ...group,
+            lastMessage: data.lastMessage
+          };
+        }
+        return group;
+      }));
+    };
+
+    socket.on("groupUpdated", groupUpdateHandler);
 
     return () => {
-      socket.disconnect();
+      socket.off("groupUpdated", groupUpdateHandler);
     };
-  }, [user, groups]);
+  }, [user]);
+
+  // Update groups when new ones are added
+  React.useEffect(() => {
+    const socket = getBackendSocket();
+    if (!socket) return;
+
+    // Join new group rooms
+    groups.forEach(group => {
+      console.log("[SOCKET] Joining new group room:", group._id);
+      socket.emit("joinGroup", group._id);
+    });
+  }, [groups]);
 
   useEffect(() => {
     if (isFirstRender.current) {
@@ -91,6 +112,7 @@ export function MainCard({ userId }: MainCardProps) {
 
   // Function to update group's lastMessage
   const updateGroupLastMessage = (message: Message) => {
+    // First update the groups list with the new message
     setGroups((prevGroups) =>
       prevGroups.map((g) =>
         g._id === message.groupId
@@ -109,36 +131,46 @@ export function MainCard({ userId }: MainCardProps) {
       )
     );
 
-    // Only update selectedGroup if it matches the message's group
+    // Then update selectedGroup only if it matches the message's group
     if (selectedGroup?._id === message.groupId) {
-      setSelectedGroup((prev) =>
-        prev
-          ? {
-              ...prev,
-              lastMessage: {
-                message: message.message,
-                sender: {
-                  name: message.sender.name,
-                  userId: message.sender.userId,
-                },
-                timestamp: message.timestamp,
-              },
-            }
-          : prev
-      );
+      setSelectedGroup((prev) => {
+        if (!prev) return null;
+        
+        return {
+          ...prev,
+          lastMessage: {
+            message: message.message,
+            sender: {
+              name: message.sender.name,
+              userId: message.sender.userId,
+            },
+            timestamp: message.timestamp,
+          },
+        };
+      });
     }
   };
 
-  // Listen for new messages in all groups
+  // Listen for group updates
   useGroupSocket(
     userId,
     (newGroup) => {
+      console.log("[SOCKET] Received addedToGroup event:", newGroup);
       setGroups((prev) => {
-        if (prev.some((g) => g._id === newGroup._id)) return prev;
-        return [...prev, newGroup];
+        // Check if group already exists
+        const exists = prev.some(g => g._id === newGroup._id);
+        if (exists) {
+          // Update existing group
+          return prev.map(g => g._id === newGroup._id ? newGroup : g);
+        } else {
+          // Add new group
+          return [...prev, newGroup];
+        }
       });
+      setSelectedGroup(newGroup);
     },
     (removedGroupId) => {
+      console.log("[SOCKET] Received removedFromGroup event:", removedGroupId);
       setGroups((prev) => prev.filter((g) => g._id !== removedGroupId));
       setSelectedGroup((prev) =>
         prev && prev._id === removedGroupId ? null : prev
@@ -184,7 +216,7 @@ export function MainCard({ userId }: MainCardProps) {
             />
           </TabsContent>
           <TabsContent value="openai">
-            <JokesCard user={user} group={selectedGroup} />
+            <OpenAICard user={user} group={selectedGroup} />
           </TabsContent>
           <TabsContent value="jokes">
             <JokesCard user={user} group={selectedGroup} />
