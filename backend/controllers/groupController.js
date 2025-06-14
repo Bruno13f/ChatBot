@@ -1,5 +1,6 @@
 const Group = require("../models/Group");
 const User = require("../models/User");
+const Message = require("../models/Message");
 const { uploadGroupPic, deleteGroupPic } = require("../config/azure");
 
 /**
@@ -301,6 +302,18 @@ exports.deleteGroup = async (req, res) => {
       return res
         .status(403)
         .json({ message: "Only the group owner can delete the group." });
+    }
+
+    // Delete all messages associated with this group
+    try {
+      console.log("🗑️ Deleting all messages for the group...");
+      await Message.deleteMany({ groupId });
+      console.log("✅ All messages deleted successfully");
+    } catch (messageError) {
+      console.log("❌ Error deleting group messages:", messageError);
+      res
+        .status(500)
+        .json({ error: "Failed to delete group", details: messageError.message });
     }
 
     // Delete group picture from Azure if it exists
