@@ -269,6 +269,7 @@ export function ChatCard({ user, group }: ChatCardProps) {
             text={message}
             setText={setMessage}
             onEnterPress={sendMessage}
+            disabled={loading || !group?._id}
           />
           <div className="flex justify-center">
             <Button
