@@ -1,11 +1,20 @@
 import { Server, Socket } from "socket.io";
 import { createServer } from "http";
 
+// Type for command help information
+interface CommandHelp {
+  description: string;
+  usage: string;
+  examples: string[];
+  category?: string;
+}
+
 // Registry to store socket connections and their commands
 interface SocketRegistry {
   [command: string]: {
     socketId: string;
     socket: Socket;
+    help: CommandHelp;
   };
 }
 
@@ -29,13 +38,13 @@ io.on("connection", (socket) => {
   );
 
   // Handle socket registration (only for service sockets)
-  socket.on("register", (commands: string[]) => {
-    console.log(`Service socket ${socket.id} registering commands:`, commands);
+  socket.on("register", (data: { commands: string[]; help: { [command: string]: CommandHelp } }) => {
+    console.log(`Service socket ${socket.id} registering commands:`, data.commands);
 
     // Mark this socket as a service socket
     serviceSockets.add(socket.id);
 
-    commands.forEach((command) => {
+    data.commands.forEach((command) => {
       // Remove any existing registration for this command
       if (socketRegistry[command]) {
         console.log(
@@ -43,10 +52,18 @@ io.on("connection", (socket) => {
         );
       }
 
+      // Get help for this command or use a default
+      const help = data.help[command] || {
+        description: "No description provided",
+        usage: command,
+        examples: [`${command}`],
+      };
+
       // Register the new command
       socketRegistry[command] = {
         socketId: socket.id,
         socket: socket,
+        help,
       };
     });
 
@@ -84,18 +101,7 @@ io.on("connection", (socket) => {
 
     // Check if command is registered
     if (command === "!help") {
-      const helpMessage =
-        `🤖 **Available Commands:**\n\n` +
-        `**JOKES 🤣**\n` +
-        `- \`!joke\` → Get a random joke\n\n` +
-        `- \`!joke category\` → Get a joke from a specific category\n\n` +
-        `  **Available categories:** programming, misc, dark, pun, spooky, christmas\n\n` +
-        `  **Example:** \!joke programming\n\n` +
-        `**WEATHER ⛅**\n` +
-        `- \`!weather city days\` → Get a weather report for a city for the next specified number of days\n\n` +
-        `  **Days:** 1, 3, 7, 14, 16\n\n` +
-        `  **Example:** \`!weather London 3\``;
-
+      const helpMessage = generateHelpMessage();
       await saveMessageToAPI(helpMessage, message.groupId, message.token);
       socket.emit("message", {
         text: helpMessage,
@@ -147,6 +153,82 @@ io.on("connection", (socket) => {
     }
   });
 });
+
+/**
+ * Generates a formatted help message based on all registered commands
+ * Organizes commands by category and adds appropriate formatting and emojis
+ */
+function generateHelpMessage(): string {
+  // Start with a header
+  let helpMessage = `🤖 **Available Commands:**\n\n`;
+
+  // Group commands by their categories
+  const categories: { [category: string]: string[] } = {};
+  
+  // Process each registered command
+  Object.entries(socketRegistry).forEach(([command, data]) => {
+    // Get category or default to "Other"
+    const category = data.help.category || "Other";
+    
+    // Create category array if it doesn't exist
+    if (!categories[category]) {
+      categories[category] = [];
+    }
+    
+    // Format the basic command help
+    let commandHelp = `- \`${data.help.usage}\` → ${data.help.description}\n\n`;
+    
+    // Add examples if available
+    if (data.help.examples && data.help.examples.length > 0) {
+      const exampleWord = data.help.examples.length > 1 ? 'Examples' : 'Example';
+      const formattedExamples = data.help.examples.map(ex => `\`${ex}\``).join(', ');
+      commandHelp += `  **${exampleWord}:** ${formattedExamples}\n\n`;
+    }
+    
+    // Add to the appropriate category
+    categories[category].push(commandHelp);
+  });
+
+  // Always show the help command first (in General category)
+  helpMessage += `**GENERAL 📋**\n`;
+  helpMessage += `- \`!help\` → Show this help message\n\n`;
+
+  // Add all categories (except "Other") with their commands
+  Object.entries(categories).forEach(([category, commands]) => {
+    if (category !== "Other") {
+      const emoji = getCategoryEmoji(category);
+      helpMessage += `**${category.toUpperCase()} ${emoji}**\n`;
+      
+      // Add all commands in this category
+      commands.forEach(cmd => helpMessage += cmd);
+    }
+  });
+
+  // Add the "Other" category at the end if it exists
+  if (categories["Other"] && categories["Other"].length > 0) {
+    helpMessage += `**OTHER ✨**\n`;
+    categories["Other"].forEach(cmd => helpMessage += cmd);
+  }
+
+  return helpMessage;
+}
+
+/**
+ * Returns an appropriate emoji for each command category
+ * @param category - The category name to get an emoji for
+ * @returns The corresponding emoji for the category
+ */
+function getCategoryEmoji(category: string): string {
+  const emojis: { [key: string]: string } = {
+    "Jokes": "🤣",
+    "Weather": "⛅", 
+    "AI": "🧠",
+    "General": "📋",
+    "Other": "✨"
+  };
+  
+  return emojis[category] || "✨";
+}
 
 const saveMessageToAPI = async (
   message: string,
