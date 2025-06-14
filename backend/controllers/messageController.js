@@ -83,8 +83,7 @@ exports.postMessage = async (req, res) => {
     !sender ||
     isJoke === undefined ||
     isWeather === undefined ||
-    isOpenAI === undefined ||
-    !userId
+    isOpenAI === undefined
   ) {
     console.log("❌ Missing one of the required fields");
     return res
@@ -93,15 +92,20 @@ exports.postMessage = async (req, res) => {
   }
 
   try {
-    const savedMessage = await new Message({
-      userId,
+    const messageData = {
       message,
       sender,
       isJoke,
       isWeather,
       isOpenAI,
       groupId
-    }).save();
+    };
+
+    if (userId) {
+      messageData.userId = userId;
+    }
+
+    const savedMessage = await new Message(messageData).save();
 
     res.json({ success: true, message: "Message saved!", data: formatMessage(savedMessage) });
   } catch (err) {

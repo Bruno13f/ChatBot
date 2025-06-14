@@ -152,8 +152,14 @@ export function MessageCard({ message, isFromOwner, isWeather, timestamp, sender
   }
 
   return (
-    <div className={`flex flex-row gap-2 ${isFromOwner ? 'justify-end' : 'justify-start'} items-start w-full`}>
-      {!isFromOwner && (
+    <div className={`flex flex-row gap-2 ${
+      sender.name === "system" 
+        ? 'justify-center' 
+        : isFromOwner 
+          ? 'justify-end' 
+          : 'justify-start'
+    } items-start w-full`}>
+      {!isFromOwner && sender.name !== "system" && (
         <Avatar className="size-6">
           <AvatarImage src={sender.profilePicture} />
           <AvatarFallback className={`${getRandomColor(sender.name)} text-white`}>
@@ -161,14 +167,24 @@ export function MessageCard({ message, isFromOwner, isWeather, timestamp, sender
           </AvatarFallback>
         </Avatar>
       )}
-      <div className={`flex flex-col gap-2 max-w-[70%] ${isFromOwner ? 'items-end' : 'items-start'}`}>
-        {!isFromOwner && (
+      <div className={`flex flex-col gap-2 ${
+        sender.name === "system"
+          ? 'max-w-[90%] items-center'
+          : isFromOwner 
+            ? 'max-w-[70%] items-end' 
+            : 'max-w-[70%] items-start'
+      }`}>
+        {sender.name === "system" ? (
+          <div className="text-sm font-medium text-center w-full">System</div>
+        ) : !isFromOwner && (
           <div className="text-sm font-medium">{sender.name}</div>
         )}
         <div className={`break-words whitespace-normal rounded-lg px-3 py-2 text-sm ${
-          !isFromOwner 
-            ? "bg-secondary-foreground text-secondary text-left self-start" 
-            : "bg-secondary text-right self-end"
+          sender.name === "system"
+            ? "bg-secondary text-left self-center w-full"
+            : !isFromOwner 
+              ? "bg-secondary-foreground text-secondary text-left self-start" 
+              : "bg-secondary text-right self-end"
         }`}>
           {isWeather ? (
             <div className="w-full h-[300px]">

@@ -39,7 +39,27 @@ export function ChatCard({ user, group }: ChatCardProps) {
 
   // Effect for initial mount and socket setup
   React.useEffect(() => {
-    const middlewareSocket = initMiddlewareSocket();
+    const middlewareSocket = initMiddlewareSocket((message) => {
+      // Add the message to the messages list
+      setMessages((prevMessages) => [
+        ...prevMessages,
+        {
+          _id: Date.now().toString(),
+          timestamp: new Date(),
+          message: message.text,
+          sender: { 
+            name: "system", 
+            userId: "system",
+            profilePicture: "" 
+          },
+          isJoke: message.isJoke,
+          isWeather: message.isWeather,
+          isOpenAI: message.isOpenAI,
+          groupId: group?._id || ""
+        }
+      ]);
+      setLoading(false); // Stop loading when we receive the response
+    });
     
   }, []); // Empty dependency array means this runs on mount
 
@@ -179,6 +199,7 @@ export function ChatCard({ user, group }: ChatCardProps) {
           sender: user.name,
           userId: user._id,
           groupId: group?._id,
+          token,
         });
       }
 
@@ -202,7 +223,7 @@ export function ChatCard({ user, group }: ChatCardProps) {
 
       //   const socket = getJokeSocket();
 
-      //   // Emit message to server
+      //   Emit message to server
       //   socket.emit("message", {
       //     text: message,
       //     sender: "user",
@@ -210,7 +231,7 @@ export function ChatCard({ user, group }: ChatCardProps) {
       //     userId,
       //   });
 
-      //   // Wait for the joke response from the socket before enabling the button
+      //   Wait for the joke response from the socket before enabling the button
       //   socket.on("message", (newMessage) => {
       //     if (newMessage.sender === "system") {
       //       setLoading(false);
@@ -264,10 +285,7 @@ export function ChatCard({ user, group }: ChatCardProps) {
       // }
     } catch (error) {
       console.error("Error sending message:", error);
-    } finally {
-      if (message.trim() !== "!joke") {
-        setLoading(false);
-      }
+      setLoading(false);
     }
   };
 
@@ -354,7 +372,7 @@ export function ChatCard({ user, group }: ChatCardProps) {
             <Button
               onClick={sendMessage}
               className="w-30 cursor-pointer"
-              disabled={loading}>
+              disabled={loading || !group?._id}>
               {loading ? (
                 <Loader2 className="animate-spin text-gray-500 w-6 h-6" />
               ) : (
