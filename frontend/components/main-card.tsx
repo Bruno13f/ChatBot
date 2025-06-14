@@ -1,4 +1,5 @@
 import * as React from "react";
+import io from "socket.io-client";
 
 import { JokesCard } from "@/components/jokes-card";
 import { ChatCard } from "@/components/chat-card";
@@ -13,6 +14,7 @@ import { Loader2 } from "lucide-react";
 import { getUserById } from "@/services/users";
 import { User } from "@/models/user";
 import { useGroupSocket } from "@/lib/use-group-socket";
+import { Message } from "@/models/message";
 
 interface MainCardProps {
   userId: string;
@@ -25,6 +27,28 @@ export function MainCard({ userId }: MainCardProps) {
   const [isLoading, setIsLoading] = React.useState(true);
   const isFirstRender = React.useRef(true);
   const [user, setUser] = React.useState<User | null>(null);
+
+  // Initialize socket for all groups
+  React.useEffect(() => {
+    if (!user) return;
+
+    const socket = io(process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:9000");
+    socket.emit("identify", userId);
+
+    // Join all group rooms
+    groups.forEach(group => {
+      socket.emit("joinGroup", group._id);
+    });
+
+    // Listen for new messages
+    socket.on("newMessage", (message: Message) => {
+      updateGroupLastMessage(message);
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [user, groups]);
 
   useEffect(() => {
     if (isFirstRender.current) {
@@ -65,21 +89,47 @@ export function MainCard({ userId }: MainCardProps) {
     }
   }, [groups]);
 
-  // Função para incrementar messageCount do grupo selecionado
-  const incrementSelectedGroupMessageCount = () => {
-    if (!selectedGroup) return;
+  // Function to update group's lastMessage
+  const updateGroupLastMessage = (message: Message) => {
     setGroups((prevGroups) =>
       prevGroups.map((g) =>
-        g._id === selectedGroup._id
-          ? { ...g, messageCount: (g.messageCount || 0) + 1 }
+        g._id === message.groupId
+          ? {
+              ...g,
+              lastMessage: {
+                message: message.message,
+                sender: {
+                  name: message.sender.name,
+                  userId: message.sender.userId,
+                },
+                timestamp: message.timestamp,
+              },
+            }
           : g
       )
     );
-    setSelectedGroup((prev) =>
-      prev ? { ...prev, messageCount: (prev.messageCount || 0) + 1 } : prev
-    );
+
+    // Only update selectedGroup if it matches the message's group
+    if (selectedGroup?._id === message.groupId) {
+      setSelectedGroup((prev) =>
+        prev
+          ? {
+              ...prev,
+              lastMessage: {
+                message: message.message,
+                sender: {
+                  name: message.sender.name,
+                  userId: message.sender.userId,
+                },
+                timestamp: message.timestamp,
+              },
+            }
+          : prev
+      );
+    }
   };
 
+  // Listen for new messages in all groups
   useGroupSocket(
     userId,
     (newGroup) => {
@@ -130,7 +180,7 @@ export function MainCard({ userId }: MainCardProps) {
             <ChatCard
               user={user}
               group={selectedGroup}
-              onMessageSentOrReceived={incrementSelectedGroupMessageCount}
+              onMessageSentOrReceived={updateGroupLastMessage}
             />
           </TabsContent>
           <TabsContent value="openai">

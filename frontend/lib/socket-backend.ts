@@ -1,4 +1,5 @@
 import { io, Socket } from "socket.io-client";
+import { Message } from "@/models/message";
 
 let socketInstance: Socket | null = null;
 
@@ -48,5 +49,49 @@ export const getBackendSocket = (): Socket | null => socketInstance;
 export const leaveBackendGroup = (groupId: string) => {
   if (socketInstance) {
     socketInstance.emit("leaveGroup", groupId);
+  }
+};
+
+export const disconnectBackendSocket = () => {
+  if (socketInstance) {
+    socketInstance.disconnect();
+    socketInstance = null;
+  }
+};
+
+// New function to join multiple groups at once
+export const joinMultipleGroups = (groupIds: string[]) => {
+  if (socketInstance) {
+    groupIds.forEach(groupId => {
+      socketInstance?.emit("joinGroup", groupId);
+    });
+  }
+};
+
+// New function to leave multiple groups at once
+export const leaveMultipleGroups = (groupIds: string[]) => {
+  if (socketInstance) {
+    groupIds.forEach(groupId => {
+      socketInstance?.emit("leaveGroup", groupId);
+    });
+  }
+};
+
+// New function to update socket instance with new user ID
+export const updateSocketUserId = (newUserId: string) => {
+  if (socketInstance) {
+    socketInstance.emit("identify", newUserId);
+  }
+};
+
+// New function to check socket connection status
+export const isSocketConnected = (): boolean => {
+  return socketInstance?.connected || false;
+};
+
+// New function to reconnect socket if disconnected
+export const reconnectSocket = () => {
+  if (socketInstance && !socketInstance.connected) {
+    socketInstance.connect();
   }
 };

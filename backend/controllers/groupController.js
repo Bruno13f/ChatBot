@@ -50,16 +50,31 @@ exports.getGroupsFromUser = async (req, res) => {
     "_id name profilePicture"
   );
 
-  // Buscar contagem de mensagens para cada grupo
-  const groupsWithMessageCount = await Promise.all(
+  // Get message count and last message for each group
+  const groupsWithMessageInfo = await Promise.all(
     groups.map(async (group) => {
       const messageCount = await Message.countDocuments({ groupId: group._id });
-      return { ...formatGroup(group), messageCount };
+      const lastMessage = await Message.findOne({ groupId: group._id })
+        .sort({ timestamp: -1 })
+        .select('message sender userId timestamp');
+
+      return {
+        ...formatGroup(group),
+        messageCount,
+        lastMessage: lastMessage ? {
+          message: lastMessage.message,
+          sender: {
+            name: lastMessage.sender,
+            userId: lastMessage.userId
+          },
+          timestamp: lastMessage.timestamp
+        } : undefined
+      };
     })
   );
 
   console.log("✅ Groups fetched successfully");
-  res.json(groupsWithMessageCount);
+  res.json(groupsWithMessageInfo);
 };
 
 exports.createGroup = async (req, res) => {
@@ -437,15 +452,28 @@ exports.addMemberToGroup = async (req, res) => {
     group.members.push(...newMembers);
     await group.save();
 
+    // Get message count and last message for the group
+    const messageCount = await Message.countDocuments({ groupId });
+    const lastMessage = await Message.findOne({ groupId })
+      .sort({ timestamp: -1 })
+      .select('message sender userId timestamp');
+
     // Populate members for socket event
     const populatedGroupForSocket = await Group.findById(groupId).populate(
       "members",
       "_id name profilePicture"
     );
-    const messageCount = await Message.countDocuments({ groupId });
     const groupForSocket = {
       ...formatGroup(populatedGroupForSocket),
       messageCount,
+      lastMessage: lastMessage ? {
+        message: lastMessage.message,
+        sender: {
+          name: lastMessage.sender,
+          userId: lastMessage.userId
+        },
+        timestamp: lastMessage.timestamp
+      } : undefined
     };
 
     // Emit socket event to new members
@@ -473,15 +501,11 @@ exports.addMemberToGroup = async (req, res) => {
       "members",
       "_id name profilePicture"
     );
-    const messageCountForOwner = await Message.countDocuments({ groupId });
     console.log("✅ Users added to group successfully");
     res.json({
       success: true,
       message: "Users added to group successfully",
-      group: {
-        ...formatGroup(populatedGroup),
-        messageCount: messageCountForOwner,
-      },
+      group: groupForSocket,
     });
   } catch (err) {
     console.log("❌ Error adding users to group:", err);
