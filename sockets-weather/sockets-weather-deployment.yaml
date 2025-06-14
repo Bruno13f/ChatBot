@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose --file docker-compose.yml convert
+    kompose.version: 1.36.0 (HEAD)
+  labels:
+    io.kompose.service: sockets-weather
+  name: sockets-weather
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: sockets-weather
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose --file docker-compose.yml convert
+        kompose.version: 1.36.0 (HEAD)
+      labels:
+        io.kompose.service: sockets-weather
+    spec:
+      containers:
+        - env:
+            - name: SOCKET_MIDDLEWARE_URI
+              value: http://sockets-middleware:8000
+          envFrom:
+            - configMapRef:
+                name: env
+            - secretRef:
+                name: app-secrets
+          image: lucasremigio/chatbot-sockets-weather:latest
+          imagePullPolicy: Never
+          name: sockets-weather
+          ports:
+            - containerPort: 4001
+              protocol: TCP
+      restartPolicy: Always

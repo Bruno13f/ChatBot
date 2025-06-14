@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose --file docker-compose.yml convert
+    kompose.version: 1.36.0 (HEAD)
+  labels:
+    io.kompose.service: sockets-jokes
+  name: sockets-jokes
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: sockets-jokes
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose --file docker-compose.yml convert
+        kompose.version: 1.36.0 (HEAD)
+      labels:
+        io.kompose.service: sockets-jokes
+    spec:
+      containers:
+        - env:
+            - name: SOCKET_MIDDLEWARE_URI
+              value: http://sockets-middleware:8000
+          envFrom:
+            - configMapRef:
+                name: env
+            - secretRef:
+                name: app-secrets
+          image: lucasremigio/chatbot-sockets-jokes:latest
+          name: sockets-jokes
+          ports:
+            - containerPort: 4000
+              protocol: TCP
+      restartPolicy: Always
