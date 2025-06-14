@@ -37,6 +37,31 @@ export function ChatCard({ user, group }: ChatCardProps) {
 
   const noGroupSelected = !group;
 
+  function smoothScrollToBottom(container: HTMLElement, duration = 1000) {
+    const start = container.scrollTop;
+    const end = container.scrollHeight - container.clientHeight;
+    const change = end - start;
+  
+    function easeOutCubic(t: number): number {
+      return 1 - Math.pow(1 - t, 3);
+    }
+  
+    function animateScroll(startTime: number) {
+      const now = performance.now();
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+  
+      container.scrollTop = start + change * easeOutCubic(progress);
+  
+      if (progress < 1) {
+        requestAnimationFrame(() => animateScroll(startTime));
+      }
+    }
+  
+    requestAnimationFrame((startTime) => animateScroll(startTime));
+  }
+  
+
   // Effect for initial mount and socket setup
   React.useEffect(() => {
     const middlewareSocket = initMiddlewareSocket((message) => {
@@ -103,52 +128,18 @@ export function ChatCard({ user, group }: ChatCardProps) {
       }
     };
 
-    // Fetch messages on mount
     fetchMessages();
-
-    // const jokeSocket = getJokeSocket();
-
-    // jokeSocket.on("message", (newMessage: Message) => {
-    //   setMessages((prevMessages) => [...prevMessages, newMessage]);
-    // });
-
-    // const jokeWeather = getWeatherSocket();
-
-    // jokeWeather.on("message", (newMessage: Message) => {
-    //   if (newMessage.sender.name === "system") {
-    //     // Process the array of temperatures
-    //     const temperatures = newMessage.message;
-
-    //     const temperaturesText = temperatures.join(",");
-
-    //     // Add the processed message to the chat
-    //     setMessages((prevMessages) => [
-    //       ...prevMessages,
-    //       {
-    //         _id: Date.now().toString(),
-    //         timestamp: new Date(),
-    //         message: temperaturesText,
-    //         sender: { name: "system", userId: "system" },
-    //         isJoke: false,
-    //         isWeather: true,
-    //         isOpenAI: false,
-    //         groupId: group?._id || ""
-    //       }
-    //     ]);
-    //   }
-    // });
-
-    // return () => {
-    //   jokeSocket.off("message");
-    //   jokeWeather.off("message");
-    //   disconnectJokeSocket();
-    //   disconnectWeatherSocket();
-    // };
 
   }, [group?._id]); // Only depend on the group ID
 
   React.useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    const container = document.querySelector(
+      ".scroll-container"
+    ) as HTMLElement | null;
+  
+    if (container) {
+      smoothScrollToBottom(container);
+    }
   }, [messages]);
 
   const sendMessage = async () => {
@@ -226,7 +217,7 @@ export function ChatCard({ user, group }: ChatCardProps) {
       </CardHeader>
       <CardContent className="flex-1 flex flex-col items-center relative w-full">
         <div
-          className={`absolute top-0 left-0 right-0 h-full w-full overflow-y-auto px-4 flex justify-center ${
+          className={`scroll-container absolute top-0 left-0 right-0 h-full w-full overflow-y-auto px-4 flex justify-center ${
             fetching ? "items-center" : "items-start"
           }`}>
           {fetching ? (
@@ -257,7 +248,7 @@ export function ChatCard({ user, group }: ChatCardProps) {
                   </span>
                 </div>
               )}
-              <div ref={messagesEndRef} />
+              <div ref={messagesEndRef} className="h-1" />
             </div>
           )}
         </div>
