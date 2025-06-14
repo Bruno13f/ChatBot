@@ -98,6 +98,16 @@ services:
       - SOCKET_MIDDLEWARE_URI=http://sockets-middleware:${SOCKET_MIDDLEWARE_PORT}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
 
+  backup-cron:
+      build:
+        context: ./scripts
+      environment:
+        - MONGO_URI=${MONGO_URI}
+        - MONGO_BACKUP_URI=${MONGO_BACKUP_URI}
+      volumes:
+        - ./scripts/dumps:/dumps
+      restart: unless-stopped
+
 networks:
   my-network:
     driver: bridge
