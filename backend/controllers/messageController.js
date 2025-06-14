@@ -15,9 +15,9 @@ const formatMessage = (message) => ({
   sender: {
     name: message.sender,
     userId: message.userId,
-    profilePicture: message.profilePicture
+    profilePicture: message.profilePicture,
   },
-  isJoke: message.isJoke, 
+  isJoke: message.isJoke,
   isWeather: message.isWeather,
   isOpenAI: message.isOpenAI,
   groupId: message.groupId,
@@ -25,7 +25,6 @@ const formatMessage = (message) => ({
 
 exports.getMessages = async (req, res) => {
   try {
-
     const groupId = req.params.groupId;
     console.log("\n🤼 Getting messages for group: ", groupId);
 
@@ -43,7 +42,9 @@ exports.getMessages = async (req, res) => {
     const user = req.user;
     if (!group.members.includes(user._id)) {
       console.log("❌ User is not a member of the group");
-      return res.status(403).json({ error: "User is not a member of the group" });
+      return res
+        .status(403)
+        .json({ error: "User is not a member of the group" });
     }
 
     const messages = await Message.find({ groupId }).sort({ timestamp: 1 });
@@ -60,7 +61,6 @@ exports.getMessages = async (req, res) => {
 };
 
 exports.postMessage = async (req, res) => {
-
   const groupId = req.params.groupId;
 
   console.log("\n🤼 Posting message for group: ", groupId);
@@ -76,7 +76,7 @@ exports.postMessage = async (req, res) => {
     return res.status(404).json({ error: "Group not found" });
   }
 
-  const { message, sender, isJoke, isWeather, isOpenAI, userId} = req.body;
+  const { message, sender, isJoke, isWeather, isOpenAI, userId } = req.body;
 
   if (
     !message ||
@@ -98,7 +98,7 @@ exports.postMessage = async (req, res) => {
       isJoke,
       isWeather,
       isOpenAI,
-      groupId
+      groupId,
     };
 
     if (userId) {
@@ -107,7 +107,17 @@ exports.postMessage = async (req, res) => {
 
     const savedMessage = await new Message(messageData).save();
 
-    res.json({ success: true, message: "Message saved!", data: formatMessage(savedMessage) });
+    // Emit message to group room via WebSocket
+    const io = req.app.get("io");
+    if (io) {
+      io.to(`group_${groupId}`).emit("newMessage", formatMessage(savedMessage));
+    }
+
+    res.json({
+      success: true,
+      message: "Message saved!",
+      data: formatMessage(savedMessage),
+    });
   } catch (err) {
     console.log("❌ Failed to save message", err);
     res

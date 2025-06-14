@@ -20,6 +20,7 @@ import { getMessagesOfGroup } from "@/services/messages";
 import { Message } from "@/models/message";
 import { postMessage } from "@/services/messages";
 import { User } from "@/models/user";
+import { initBackendSocket, leaveBackendGroup } from "@/lib/socket-backend";
 
 interface ChatCardProps {
   user: User | null;
@@ -64,29 +65,21 @@ export function ChatCard({ user, group }: ChatCardProps) {
 
   // Effect for initial mount and socket setup
   React.useEffect(() => {
-    const middlewareSocket = initMiddlewareSocket((message) => {
-      // Add the message to the messages list
-      setMessages((prevMessages) => [
-        ...prevMessages,
-        {
-          _id: Date.now().toString(),
-          timestamp: new Date(),
-          message: message.text,
-          sender: { 
-            name: "system", 
-            userId: "system",
-            profilePicture: "" 
-          },
-          isJoke: message.isJoke,
-          isWeather: message.isWeather,
-          isOpenAI: message.isOpenAI,
-          groupId: group?._id || ""
-        }
-      ]);
-      setLoading(false); // Stop loading when we receive the response
-    });
-    
-  }, []); // Empty dependency array means this runs on mount
+    let backendSocket: any;
+    if (user && group) {
+      backendSocket = initBackendSocket(user._id, group._id, (message) => {
+        // Evita duplicação: não adiciona mensagem se for do próprio usuário
+        if (message.sender && message.sender.userId === user._id) return;
+        setMessages((prevMessages) => [...prevMessages, message]);
+        setLoading(false);
+      });
+    }
+    return () => {
+      if (backendSocket && group) {
+        leaveBackendGroup(group._id);
+      }
+    };
+  }, [user?._id, group?._id]); // Empty dependency array means this runs on mount
 
   // Effect for fetching messages when group changes
   React.useEffect(() => {
@@ -174,6 +167,9 @@ export function ChatCard({ user, group }: ChatCardProps) {
           groupId: group?._id,
           token,
         });
+        setLoading(false); // Garante que loading é desativado após envio via socket especial
+      } else {
+        setLoading(false); // Garante que loading é desativado após envio normal
       }
 
     } catch (error) {
