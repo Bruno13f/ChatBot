@@ -321,6 +321,7 @@ exports.deleteGroupPicture = async (req, res) => {
 exports.deleteGroup = async (req, res) => {
   const groupId = req.params.groupId;
   const user = req.user;
+  const io = req.app.get("io"); // Adicionado para emitir evento
 
   console.log("\n🤼 Deleting group with id: ", groupId);
 
@@ -374,7 +375,12 @@ exports.deleteGroup = async (req, res) => {
     await Group.deleteOne({ _id: groupId });
     user.groups = user.groups.filter((g) => g.toString() !== groupId);
     await user.save();
-    console.log("✅ Group deleted successfully");
+    // Emitir evento para todos os membros do grupo
+    io.to(`group_${groupId}`).emit("removedFromGroup", { groupId });
+    console.log(
+      "[SOCKET] Evento 'removedFromGroup' emitido para o grupo",
+      groupId
+    );
     res.json({ success: true, message: "Group deleted successfully" });
   } catch (err) {
     console.log("❌ Error deleting group:", err);
@@ -491,6 +497,7 @@ exports.addMemberToGroup = async (req, res) => {
 exports.leaveGroup = async (req, res) => {
   const groupId = req.params.groupId;
   const user = req.user;
+  const io = req.app.get("io"); // Adicionado para emitir evento
 
   console.log("\n🤼 Leaving group with id: ", groupId);
 
@@ -523,7 +530,12 @@ exports.leaveGroup = async (req, res) => {
     // Remove grupo da lista do usuário
     user.groups = user.groups.filter((g) => g.toString() !== groupId);
     await user.save();
-    console.log("✅ Left group successfully");
+    // Emitir evento para todos os membros do grupo
+    io.to(`group_${groupId}`).emit("removedFromGroup", { groupId });
+    console.log(
+      "[SOCKET] Evento 'removedFromGroup' emitido para o grupo",
+      groupId
+    );
     res.json({ success: true, message: "Left group successfully" });
   } catch (err) {
     console.log("❌ Error leaving group:", err);
@@ -537,6 +549,7 @@ exports.removeMemberFromGroup = async (req, res) => {
   const groupId = req.params.groupId;
   const memberId = req.params.memberId;
   const user = req.user;
+  const io = req.app.get("io"); // Adicionado para emitir evento
 
   console.log("\n🤼 Removing member from group with id: ", groupId);
 
@@ -559,7 +572,22 @@ exports.removeMemberFromGroup = async (req, res) => {
     const member = await User.findById(memberId);
     member.groups = member.groups.filter((g) => g.toString() !== groupId);
     await member.save();
-    console.log("✅ Member removed from group successfully");
+    // Emitir evento para todos os membros do grupo
+    io.to(`group_${groupId}`).emit("removedFromGroup", { groupId });
+    // Emitir evento diretamente para o membro removido (caso não esteja conectado na room)
+    const userSockets = req.app.get("userSockets");
+    const memberSocketId = userSockets.get(memberId);
+    if (memberSocketId) {
+      io.to(memberSocketId).emit("removedFromGroup", { groupId });
+      console.log(
+        "[SOCKET] Evento 'removedFromGroup' emitido para o membro removido",
+        memberId
+      );
+    }
+    console.log(
+      "[SOCKET] Evento 'removedFromGroup' emitido para o grupo",
+      groupId
+    );
     res.json({
       success: true,
       message: "Member removed from group successfully",

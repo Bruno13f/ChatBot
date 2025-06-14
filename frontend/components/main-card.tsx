@@ -80,12 +80,21 @@ export function MainCard({ userId }: MainCardProps) {
     );
   };
 
-  useGroupSocket(userId, (newGroup) => {
-    setGroups((prev) => {
-      if (prev.some((g) => g._id === newGroup._id)) return prev;
-      return [...prev, newGroup];
-    });
-  });
+  useGroupSocket(
+    userId,
+    (newGroup) => {
+      setGroups((prev) => {
+        if (prev.some((g) => g._id === newGroup._id)) return prev;
+        return [...prev, newGroup];
+      });
+    },
+    (removedGroupId) => {
+      setGroups((prev) => prev.filter((g) => g._id !== removedGroupId));
+      setSelectedGroup((prev) =>
+        prev && prev._id === removedGroupId ? null : prev
+      );
+    }
+  );
 
   if (isLoading) {
     return (
