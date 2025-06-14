@@ -2,123 +2,156 @@ require("dotenv").config();
 const { io } = require("socket.io-client");
 const OpenAI = require("openai");
 
+// Configuration
+const CONFIG = {
+  middlewareUri: process.env.SOCKET_MIDDLEWARE_URI || "http://localhost:8000",
+  backendUri: process.env.BACKEND_URI || "http://localhost:8000",
+  command: "!openai",
+  model: "gpt-3.5-turbo",
+  openAiKey: process.env.OPENAI_API_KEY,
+};
+
+const verifyConfig = () => {
+  if (!CONFIG.middlewareUri) {
+    throw new Error("SOCKET_MIDDLEWARE_URI is not set");
+  }
+  if (!CONFIG.backendUri) {
+    throw new Error("BACKEND_URI is not set");
+  }
+  if (!CONFIG.command) {
+    throw new Error("COMMAND is not set");
+  }
+  if (!CONFIG.model) {
+    throw new Error("MODEL is not set");
+  }
+  if (!CONFIG.openAiKey) {
+    throw new Error("OPENAI_API_KEY is not set");
+  }
+};
+
+verifyConfig();
+
+console.log(
+  "OpenAI socket starting with config: ",
+  JSON.stringify({
+    middlewareUri: CONFIG.middlewareUri,
+    backendUri: CONFIG.backendUri,
+    command: CONFIG.command,
+    model: CONFIG.model,
+    openAiKey: "...REDACTED..."
+  }, null, 2)
+);
+
 // Initialize OpenAI client
-const openAiKey = process.env.OPENAI_API_KEY;
-if (!openAiKey) {
-  throw new Error("OPENAI_API_KEY is not set");
-}
-
 const openai = new OpenAI({
-  apiKey: openAiKey,
+  apiKey: CONFIG.openAiKey,
 });
 
-// Connect to the middleware using environment variable
-const socket = io(process.env.SOCKET_MIDDLEWARE_URI || "http://localhost:8000");
+// Initialize socket connection
+const socket = io(CONFIG.middlewareUri);
 
-// Register the commands this service handles
-socket.on("connect", () => {
-  console.log("Connected to middleware registered command !openai");
-  socket.emit("register", ["!openai"]);
-});
+// Socket event handlers
+const setupSocketHandlers = () => {
+  socket.on("connect", () => {
+    console.log(`Connected to middleware registered command ${CONFIG.command}`);
+    socket.emit("register", [CONFIG.command]);
+  });
 
-// Handle command processing
-socket.on("process_command", async (data) => {
+  socket.on("disconnect", () => {
+    console.log("Disconnected from middleware");
+  });
+
+  socket.on("process_command", handleCommand);
+};
+
+// Command handler
+const handleCommand = async (data) => {
   const { command, args, originalMessage } = data;
 
-  if (command === "!openai") {
-    console.log("Processing OpenAI command ", command, args);
+  if (command.toLowerCase() !== CONFIG.command.toLowerCase()) return;
 
-    if (!args.length) {
-      const text = "**⚠️ Usage:** `!openai <your question>`";
-      await saveOpenAIResponseToAPI(
-        text,
-        originalMessage.groupId,
-        originalMessage.token,
-        false
-      );
-      socket.emit("service_response", {
-        text: text,
-        isJoke: false,
-        isWeather: false,
-        isOpenAI: false,
-        originalMessage: {
-          clientId: originalMessage.clientId,
-        },
-      });
-      return;
-    }
+  console.log(`Processing ${CONFIG.command} command:`, args);
 
-    try {
-      const question = args.join(" ");
-      const completion = await openai.chat.completions.create({
-        messages: [{ role: "user", content: question }],
-        model: "gpt-3.5-turbo",
-      });
-
-      const response = completion.choices[0].message.content;
-      const text = `🤖 **AI Response:**\n\n${response}`;
-
-      await saveOpenAIResponseToAPI(
-        text,
-        originalMessage.groupId,
-        originalMessage.token,
-        true
-      );
-
-      socket.emit("service_response", {
-        text: text,
-        isJoke: false,
-        isWeather: false,
-        isOpenAI: true,
-        originalMessage: {
-          clientId: originalMessage.clientId,
-        },
-      });
-    } catch (error) {
-      console.error("Error fetching OpenAI response:", error);
-      const text =
-        "❌ Sorry, I couldn't process your request. Please try again later!";
-      await saveOpenAIResponseToAPI(
-        text,
-        originalMessage.groupId,
-        originalMessage.token,
-        false
-      );
-      socket.emit("service_response", {
-        text: text,
-        isJoke: false,
-        isWeather: false,
-        isOpenAI: false,
-        originalMessage: {
-          clientId: originalMessage.clientId,
-        },
-      });
-    }
+  if (!args.length) {
+    await sendResponse(
+      "**⚠️ Usage:** `!openai <your question>`",
+      originalMessage,
+      false
+    );
+    return;
   }
-});
 
-// Handle disconnection
-socket.on("disconnect", () => {
-  console.log("Disconnected from middleware");
-});
+  try {
+    const response = await getAIResponse(args.join(" "));
+    await sendResponse(
+      `🤖 **AI Response:**\n\n${response}`,
+      originalMessage,
+      true
+    );
+  } catch (error) {
+    console.error("Error fetching OpenAI response:", error);
+    await sendResponse(
+      "❌ Sorry, I couldn't process your request. Please try again later!",
+      originalMessage,
+      false
+    );
+  }
+};
 
-const saveOpenAIResponseToAPI = async (response, groupId, token, isOpenAI) => {
-  const backendUrl = process.env.BACKEND_URI || "http://localhost:8000";
-  const res = await fetch(`${backendUrl}/groups/${groupId}/messages`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({
-      message: response,
-      sender: "system",
-      isJoke: false,
-      isWeather: false,
-      isOpenAI: isOpenAI,
-    }),
+// OpenAI API interaction
+const getAIResponse = async (question) => {
+  const completion = await openai.chat.completions.create({
+    messages: [{ role: "user", content: question }],
+    model: CONFIG.model,
   });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.message || "Something went wrong.");
+  return completion.choices[0].message.content;
+};
+
+// Response handling
+const sendResponse = async (text, originalMessage, isOpenAI) => {
+  // Save to API
+  await saveToAPI(text, originalMessage, isOpenAI);
+
+  // Emit to middleware
+  socket.emit("service_response", {
+    text,
+    isJoke: false,
+    isWeather: false,
+    isOpenAI,
+    originalMessage: {
+      clientId: originalMessage.clientId,
+    },
+  });
+};
+
+// API interaction
+const saveToAPI = async (message, originalMessage, isOpenAI) => {
+  const { groupId, token } = originalMessage;
+
+  const response = await fetch(
+    `${CONFIG.backendUri}/groups/${groupId}/messages`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        message,
+        sender: "system",
+        isJoke: false,
+        isWeather: false,
+        isOpenAI,
+      }),
+    }
+  );
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.message || "Something went wrong.");
+  }
   return data;
 };
+
+// Start the service
+setupSocketHandlers();

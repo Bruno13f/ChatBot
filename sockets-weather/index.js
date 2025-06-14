@@ -2,208 +2,190 @@ require("dotenv").config();
 const { io } = require("socket.io-client");
 const NodeGeocoder = require("node-geocoder");
 
-const options = {
-  provider: "openstreetmap",
+// Configuration
+const CONFIG = {
+  middlewareUri: process.env.SOCKET_MIDDLEWARE_URI || "http://localhost:8000",
+  backendUri: process.env.BACKEND_URI || "http://localhost:8000",
+  command: "!weather",
+  validDays: [1, 3, 7, 14, 16],
+  geocoderOptions: {
+    provider: "openstreetmap",
+  },
 };
 
-const geocoder = NodeGeocoder(options);
+const verifyConfig = () => {
+  if (!CONFIG.middlewareUri) {
+    throw new Error("SOCKET_MIDDLEWARE_URI is not set");
+  }
+  if (!CONFIG.backendUri) {
+    throw new Error("BACKEND_URI is not set");
+  }
+  if (!CONFIG.command) {
+    throw new Error("COMMAND is not set");
+  }
+};
 
-// Connect to the middleware using environment variable
-const socket = io(process.env.SOCKET_MIDDLEWARE_URI || "http://localhost:8000");
+verifyConfig();
 
-// Register the commands this service handles
-socket.on("connect", () => {
-  console.log("Connected to middleware registered command !weather");
-  socket.emit("register", ["!weather"]);
-});
+console.log(
+  "Weather socket starting with config: ",
+  JSON.stringify(CONFIG, null, 2)
+);
 
-socket.on("process_command", async (data) => {
+// Initialize geocoder
+const geocoder = NodeGeocoder(CONFIG.geocoderOptions);
+
+// Initialize socket connection
+const socket = io(CONFIG.middlewareUri);
+
+// Socket event handlers
+const setupSocketHandlers = () => {
+  socket.on("connect", () => {
+    console.log(`Connected to middleware registered command ${CONFIG.command}`);
+    socket.emit("register", [CONFIG.command]);
+  });
+
+  socket.on("disconnect", () => {
+    console.log("Disconnected from middleware");
+  });
+
+  socket.on("process_command", handleCommand);
+};
+
+// Command handler
+const handleCommand = async (data) => {
   const { command, args, originalMessage } = data;
 
-  if (command === "!weather") {
-    console.log("Processing weather command ", command, args);
+  if (command.toLowerCase() !== CONFIG.command.toLowerCase()) return;
 
-    console.log("args length ", args.length);
+  console.log(`Processing ${CONFIG.command} command:`, args);
 
-    if (args.length !== 2) {
-      const text = "**⚠️ Usage:** `!weather <city> <days>`";
-      await saveWeatherToAPI(
-        text,
-        originalMessage.groupId,
-        originalMessage.token,
-        false
-      );
-      socket.emit("service_response", {
-        text: text,
-        isJoke: false,
-        isWeather: false,
-        isOpenAI: false,
-        originalMessage: {
-          clientId: originalMessage.clientId,
-        },
-      });
-      return;
-    }
-
-    const validDays = [1, 3, 7, 14, 16];
-
-    if (!validDays.includes(parseInt(args[1]))) {
-      const text = "**⚠️ Invalid Days:** 1, 3, 7, 14, 16";
-      await saveWeatherToAPI(
-        text,
-        originalMessage.groupId,
-        originalMessage.token,
-        false
-      );
-      socket.emit("service_response", {
-        text: text,
-        isJoke: false,
-        isWeather: false,
-        isOpenAI: false,
-        originalMessage: {
-          clientId: originalMessage.clientId,
-        },
-      });
-      return;
-    }
-
-    const city = args[0];
-    const days = parseInt(args[1]);
-
-    const coordinates = await getCoordinates(city);
-
-    if (coordinates === -1) {
-      const text = "❌ Could not find coordinates for the given city.";
-      await saveWeatherToAPI(
-        text,
-        originalMessage.groupId,
-        originalMessage.token,
-        false
-      );
-      socket.emit("service_response", {
-        text: text,
-        isJoke: false,
-        isWeather: false,
-        isOpenAI: false,
-        originalMessage: {
-          clientId: originalMessage.clientId,
-        },
-      });
-      return;
-    }
-
-    try {
-      const temperatures = await fetchWeather(
-        coordinates[0],
-        coordinates[1],
-        days
-      );
-      const text = temperatures.join(",");
-      await saveWeatherToAPI(
-        text,
-        originalMessage.groupId,
-        originalMessage.token,
-        true
-      );
-      socket.emit("service_response", {
-        text: text,
-        isJoke: false,
-        isWeather: true,
-        isOpenAI: false,
-        originalMessage: {
-          clientId: originalMessage.clientId,
-        },
-      });
-    } catch (error) {
-      const text =
-        "❌ Error fetching max temperature for the given city and days.";
-      await saveWeatherToAPI(
-        text,
-        originalMessage.groupId,
-        originalMessage.token,
-        false
-      );
-      socket.emit("service_response", {
-        text: text,
-        isJoke: false,
-        isWeather: false,
-        isOpenAI: false,
-        originalMessage: {
-          clientId: originalMessage.clientId,
-        },
-      });
-    }
+  if (!validateArgs(args)) {
+    await sendResponse(
+      "**⚠️ Usage:** `!weather <city> <days>`",
+      originalMessage,
+      false
+    );
+    return;
   }
-});
 
-socket.on("disconnect", () => {
-  console.log("Disconnected from middleware");
-});
+  const [city, days] = args;
+  const coordinates = await getCoordinates(city);
 
+  if (coordinates === -1) {
+    await sendResponse(
+      "❌ Could not find coordinates for the given city.",
+      originalMessage,
+      false
+    );
+    return;
+  }
+
+  try {
+    const temperatures = await fetchWeather(
+      coordinates[0],
+      coordinates[1],
+      parseInt(days)
+    );
+    await sendResponse(temperatures.join(","), originalMessage, true);
+  } catch (error) {
+    console.error("Error fetching weather:", error);
+    await sendResponse(
+      "❌ Error fetching max temperature for the given city and days.",
+      originalMessage,
+      false
+    );
+  }
+};
+
+// Validation
+const validateArgs = (args) => {
+  if (args.length !== 2) return false;
+  return CONFIG.validDays.includes(parseInt(args[1]));
+};
+
+// Weather API interaction
 const fetchWeather = async (lat, long, days) => {
   const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${long}&daily=temperature_2m_max&forecast_days=${days}`;
 
-  try {
-    const response = await fetch(url);
-
-    if (!response.ok) {
-      console.log("Failed to fetch weather data");
-      return;
-    } else {
-      console.log("Fetched weather data");
-    }
-
-    // Parse the JSON response
-    const data = await response.json();
-
-    // Accessing the daily maximum temperatures
-    const temperatures = data.daily.temperature_2m_max;
-    console.log("Maximum temperatures for the next days:");
-    temperatures.forEach((temp, index) => {
-      console.log(`Day ${index + 1}: ${temp}°C`);
-    });
-
-    return temperatures;
-  } catch (error) {
-    console.error("Error fetching weather:", error);
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error("Failed to fetch weather data");
   }
+
+  const data = await response.json();
+  const temperatures = data.daily.temperature_2m_max;
+
+  console.log("Maximum temperatures for the next days:");
+  temperatures.forEach((temp, index) => {
+    console.log(`Day ${index + 1}: ${temp}°C`);
+  });
+
+  return temperatures;
 };
 
+// Geocoding
 const getCoordinates = async (city) => {
   try {
     const res = await geocoder.geocode(city);
     if (res.length > 0) {
       const { latitude, longitude } = res[0];
-      console.log(
-        `${city} => Latitude: ${res[0].latitude}, Longitude: ${res[0].longitude}`
-      );
+      console.log(`${city} => Latitude: ${latitude}, Longitude: ${longitude}`);
       return [latitude, longitude];
-    } else {
-      console.log("No result found.");
-      return -1;
     }
+    console.log("No result found.");
+    return -1;
   } catch (err) {
-    console.error(err);
+    console.error("Geocoding error:", err);
+    return -1;
   }
 };
 
-const saveWeatherToAPI = async (weather, groupId, token, isWeather) => {
-  const backendUrl = process.env.BACKEND_URI || "http://localhost:8000";
-  const res = await fetch(`${backendUrl}/groups/${groupId}/messages`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
+// Response handling
+const sendResponse = async (text, originalMessage, isWeather) => {
+  // Save to API
+  await saveToAPI(text, originalMessage, isWeather);
+
+  // Emit to middleware
+  socket.emit("service_response", {
+    text,
+    isJoke: false,
+    isWeather,
+    isOpenAI: false,
+    originalMessage: {
+      clientId: originalMessage.clientId,
     },
-    body: JSON.stringify({
-      message: weather,
-      sender: "system",
-      isJoke: false,
-      isWeather: isWeather,
-      isOpenAI: false,
-    }),
   });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.message || "Something went wrong.");
+};
+
+// API interaction
+const saveToAPI = async (message, originalMessage, isWeather) => {
+  const { groupId, token } = originalMessage;
+
+  const response = await fetch(
+    `${CONFIG.backendUri}/groups/${groupId}/messages`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        message,
+        sender: "system",
+        isJoke: false,
+        isWeather,
+        isOpenAI: false,
+      }),
+    }
+  );
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.message || "Something went wrong.");
+  }
   return data;
 };
+
+// Start the service
+setupSocketHandlers();

@@ -63,6 +63,7 @@ services:
       - .env
     environment:
       - BACKEND_URI=http://backend:${BACKEND_PORT}/api
+      - SOCKET_MIDDLEWARE_URI=http://sockets-middleware:${SOCKET_MIDDLEWARE_PORT}
 
   sockets-weather:
     container_name: sockets-weather
@@ -78,6 +79,7 @@ services:
       - .env
     environment:
       - BACKEND_URI=http://backend:${BACKEND_PORT}/api
+      - SOCKET_MIDDLEWARE_URI=http://sockets-middleware:${SOCKET_MIDDLEWARE_PORT}
 
   sockets-open-ai:
     container_name: sockets-open-ai

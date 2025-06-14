@@ -15,7 +15,11 @@ import {
 import { Loader2 } from "lucide-react";
 import { Group } from "@/models/group";
 import { H4 } from "@/components/ui/typography";
-import { disconnectMiddlewareSocket, getMiddlewareSocket, initMiddlewareSocket } from "@/lib/socket-middleware";
+import {
+  disconnectMiddlewareSocket,
+  getMiddlewareSocket,
+  initMiddlewareSocket,
+} from "@/lib/socket-middleware";
 import { getMessagesOfGroup } from "@/services/messages";
 import { Message } from "@/models/message";
 import { postMessage } from "@/services/messages";
@@ -28,7 +32,11 @@ interface ChatCardProps {
   onMessageSentOrReceived?: () => void;
 }
 
-export function ChatCard({ user, group, onMessageSentOrReceived }: ChatCardProps) {
+export function ChatCard({
+  user,
+  group,
+  onMessageSentOrReceived,
+}: ChatCardProps) {
   const [messages, setMessages] = React.useState<Message[]>([]);
   const [message, setMessage] = React.useState("");
   const [loading, setLoading] = React.useState(false);
@@ -43,34 +51,58 @@ export function ChatCard({ user, group, onMessageSentOrReceived }: ChatCardProps
     const start = container.scrollTop;
     const end = container.scrollHeight - container.clientHeight;
     const change = end - start;
-  
+
     function easeOutCubic(t: number): number {
       return 1 - Math.pow(1 - t, 3);
     }
-  
+
     function animateScroll(startTime: number) {
       const now = performance.now();
       const elapsed = now - startTime;
       const progress = Math.min(elapsed / duration, 1);
-  
+
       container.scrollTop = start + change * easeOutCubic(progress);
-  
+
       if (progress < 1) {
         requestAnimationFrame(() => animateScroll(startTime));
       }
     }
-  
+
     requestAnimationFrame((startTime) => animateScroll(startTime));
   }
-  
 
   // Effect for initial mount and socket setup
   React.useEffect(() => {
+    const middlewareSocket = initMiddlewareSocket((message) => {
+      // Add the message to the messages list
+      setMessages((prevMessages) => [
+        ...prevMessages,
+        {
+          _id: Date.now().toString(),
+          timestamp: new Date(),
+          message: message.text,
+          sender: {
+            name: "system",
+            userId: "system",
+            profilePicture: "",
+          },
+          isJoke: message.isJoke,
+          isWeather: message.isWeather,
+          isOpenAI: message.isOpenAI,
+          groupId: group?._id || "",
+        },
+      ]);
+      setLoading(false); // Stop loading when we receive the response
+    });
+
     let backendSocket: any;
     if (user && group) {
       backendSocket = initBackendSocket(user._id, group._id, (message) => {
         // Evita duplicação: não adiciona mensagem se for do próprio usuário
         if (message.sender && message.sender.userId === user._id) return;
+        if (message.sender.name.toLowerCase() === "system") {
+          return;
+        }
         setMessages((prevMessages) => [...prevMessages, message]);
         setLoading(false);
         if (onMessageSentOrReceived) onMessageSentOrReceived();
@@ -112,7 +144,7 @@ export function ChatCard({ user, group, onMessageSentOrReceived }: ChatCardProps
           isJoke: msgObj.isJoke,
           isWeather: msgObj.isWeather,
           isOpenAI: msgObj.isOpenAI,
-          groupId: msgObj.groupId
+          groupId: msgObj.groupId,
         }));
 
         setMessages(formattedMessages);
@@ -124,14 +156,13 @@ export function ChatCard({ user, group, onMessageSentOrReceived }: ChatCardProps
     };
 
     fetchMessages();
-
   }, [group?._id]); // Only depend on the group ID
 
   React.useEffect(() => {
     const container = document.querySelector(
       ".scroll-container"
     ) as HTMLElement | null;
-  
+
     if (container) {
       smoothScrollToBottom(container);
     }
@@ -173,7 +204,6 @@ export function ChatCard({ user, group, onMessageSentOrReceived }: ChatCardProps
       } else {
         setLoading(false); // Garante que loading é desativado após envio normal
       }
-
     } catch (error) {
       console.error("Error sending message:", error);
       setLoading(false);
@@ -191,11 +221,28 @@ export function ChatCard({ user, group, onMessageSentOrReceived }: ChatCardProps
     }
 
     try {
-      const data = await postMessage(group!._id, message, sender, false, false, false, user._id);
+      const data = await postMessage(
+        group!._id,
+        message,
+        sender,
+        false,
+        false,
+        false,
+        user._id
+      );
 
       setMessages((prevMessages) => [
         ...prevMessages,
-        { _id: data._id, timestamp: data.timestamp, message: data.message, sender: data.sender, isJoke: data.isJoke, isWeather: data.isWeather, isOpenAI: data.isOpenAI, groupId: data.groupId },
+        {
+          _id: data._id,
+          timestamp: data.timestamp,
+          message: data.message,
+          sender: data.sender,
+          isJoke: data.isJoke,
+          isWeather: data.isWeather,
+          isOpenAI: data.isOpenAI,
+          groupId: data.groupId,
+        },
       ]);
       setMessage("");
       if (onMessageSentOrReceived) onMessageSentOrReceived();
