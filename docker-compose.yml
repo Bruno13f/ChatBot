@@ -33,6 +33,22 @@ services:
       - AZURE_TOKEN=${AZURE_TOKEN}
       - AZURE_URL=${AZURE_URL}
 
+  sockets-middleware:
+    container_name: sockets-middleware
+    build:
+      context: ./middleware
+    ports:
+      - "${SOCKET_MIDDLEWARE_PORT}:${SOCKET_MIDDLEWARE_PORT}"
+    networks:
+      - my-network
+    depends_on:
+      - backend
+      - frontend
+    env_file:
+      - .env
+    environment:
+      - BACKEND_URI=http://backend:${BACKEND_PORT}/api
+
   sockets-jokes:
     container_name: sockets-jokes
     build:
@@ -42,8 +58,7 @@ services:
     networks:
       - my-network
     depends_on:
-      - backend
-      - frontend
+      - sockets-middleware
     env_file:
       - .env
     environment:
@@ -58,8 +73,7 @@ services:
     networks:
       - my-network
     depends_on:
-      - backend
-      - frontend
+      - sockets-middleware
     env_file:
       - .env
     environment:
@@ -74,12 +88,13 @@ services:
     networks:
       - my-network
     depends_on:
-      - backend
-      - frontend
+      - sockets-middleware
     env_file:
       - .env
     environment:
       - BACKEND_URI=http://backend:${BACKEND_PORT}/api
+      - SOCKET_MIDDLEWARE_URI=http://sockets-middleware:${SOCKET_MIDDLEWARE_PORT}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
 
 networks:
   my-network:
