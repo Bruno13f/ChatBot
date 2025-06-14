@@ -63,60 +63,85 @@ exports.getGroupsFromUser = async (req, res) => {
 };
 
 exports.createGroup = async (req, res) => {
-  const { name } = req.body;
-
-  console.log("\n🤼 Creating group with name: ", name);
-
-  if (!name) {
-    console.log("❌ Name of group is required");
-    return res.status(400).json({ message: "Name of group is required" });
-  }
-
-  const user = req.user;
-  const existingGroup = await Group.findOne({
-    name: { $regex: `^${name}$`, $options: "i" },
-    owner: user._id,
-  });
-
-  if (existingGroup) {
-    console.log("❌ A group with this name already exists.");
-    return res
-      .status(400)
-      .json({ message: "A group with this name already exists." });
-  }
+  console.log(req.body);
+  console.log("🔍 Creating group - Request received");
+  console.log("📄 req.body:", req.body);
+  console.log("📁 req.file:", req.file ? "File present" : "No file");
 
   try {
-    const group = await new Group({
-      name,
-      owner: user._id,
-      members: [user._id],
-    }).save();
-    user.groups.push(group._id);
-    await user.save();
+    const { name } = req.body;
+    const userId = req.user._id;
 
-    // Populate members with _id and name
-    const populatedGroup = await Group.findById(group._id).populate(
-      "members",
-      "_id name profilePicture"
-    );
-
-    // Emit event to owner to join the group room
-    const io = req.app.get("io");
-    if (io && user._id) {
-      io.to(user._id.toString()).emit("joinGroup", group._id.toString());
+    if (!name || name.trim() === "") {
+      return res.status(400).json({ message: "Group name is required" });
     }
 
-    console.log("✅ Group created successfully");
-    res.json({
-      success: true,
-      message: "Group created successfully",
-      group: formatGroup(populatedGroup),
-    });
-  } catch (err) {
-    console.log("❌ Error creating group: ", err);
-    res
-      .status(500)
-      .json({ error: "Failed to create group", details: err.message });
+    // Create the group data object
+    const groupData = {
+      name: name.trim(),
+      owner: userId,
+      members: [userId],
+    };
+
+    // If a group picture was uploaded, upload it to Azure
+    if (req.file) {
+      console.log(`📸 Processing group picture upload for new group`);
+
+      try {
+        // We need to create the group first to get the ID for the picture upload
+        const tempGroup = new Group(groupData);
+        const savedGroup = await tempGroup.save();
+
+        // Now upload the picture with the group ID
+        const imageUrl = await uploadGroupPic(
+          savedGroup._id.toString(),
+          req.file.buffer,
+          req.file.originalname,
+          req.file.mimetype
+        );
+
+        // Update the group with the picture URL
+        savedGroup.groupPicture = imageUrl;
+        await savedGroup.save();
+
+        console.log(`✅ Group picture uploaded to Azure: ${imageUrl}`);
+
+        // Populate the group with member details
+        const populatedGroup = await Group.findById(savedGroup._id).populate(
+          "members",
+          "_id name email profilePicture"
+        );
+
+        return res.status(201).json(populatedGroup);
+      } catch (uploadError) {
+        console.error(
+          "❌ Error uploading group picture to Azure:",
+          uploadError
+        );
+        return res
+          .status(500)
+          .json({ message: "Failed to upload group picture" });
+      }
+    } else {
+      // No picture, just create the group normally
+      const group = new Group(groupData);
+      const savedGroup = await group.save();
+
+      // Populate the group with member details
+      const populatedGroup = await Group.findById(savedGroup._id).populate(
+        "members",
+        "_id name email profilePicture"
+      );
+
+      console.log("✅ Group created successfully without picture");
+      return res.status(201).json(populatedGroup);
+    }
+  } catch (error) {
+    console.error("❌ Error creating group:", error);
+    if (error.name === "ValidationError") {
+      return res.status(400).json({ message: error.message });
+    }
+    res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -124,6 +149,7 @@ exports.createGroup = async (req, res) => {
  * Edit group (name and picture)
  */
 exports.editGroup = async (req, res) => {
+  console.log(req.body);
   const groupId = req.params.groupId;
   const { name } = req.body;
   const user = req.user;

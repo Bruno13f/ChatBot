@@ -25,7 +25,7 @@ export async function getGroupsOfUser(userId: string) {
   return data;
 }
 
-export async function createGroup(name: string) {
+export async function createGroup(name: string, groupPicture?: File) {
   if (typeof window === "undefined") return; // SSR guard
 
   const token = localStorage.getItem("token");
@@ -36,18 +36,23 @@ export async function createGroup(name: string) {
     return;
   }
 
+  const formData = new FormData();
+  formData.append("name", name);
+  if (groupPicture) {
+    formData.append("groupPicture", groupPicture);
+  }
+
   const res = await fetch(`${BACKEND_URI}/groups`, {
     method: "POST",
     headers: {
-      "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify({ name }),
+    body: formData,
   });
 
   const data = await res.json();
   if (!res.ok) throw new Error(data.message || "Something went wrong.");
-  return data.group;
+  return data;
 }
 
 export async function updateGroup(

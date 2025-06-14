@@ -47,7 +47,12 @@ router.put(
   updateUser
 );
 
-router.post("/groups", authenticateToken, createGroup);
+router.post(
+  "/groups",
+  authenticateToken,
+  upload.single("groupPicture"),
+  createGroup
+);
 router.put(
   "/groups/:groupId",
   authenticateToken,

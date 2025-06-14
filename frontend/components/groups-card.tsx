@@ -35,13 +35,11 @@ export function GroupsCard({
     return groups.filter((group) => group.name.toLowerCase().includes(query));
   }, [groups, searchQuery]);
 
-  async function handleCreateGroup(
-    name: string,
-  ): Promise<void> {
+  async function handleCreateGroup(name: string, file?: File): Promise<void> {
     try {
       // Note: Group creation currently doesn't support initial pictures
       // Picture can be added after creation through editing
-      const group = await createGroup(name);
+      const group = await createGroup(name, file);
       groups.push(group);
 
       ToastSuccess("Group created successfully!");
