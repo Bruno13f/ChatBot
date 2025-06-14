@@ -84,7 +84,7 @@ export function ChatCard({
     if (!user || !group) return;
 
     initMiddlewareSocket((message) => {
-      console.log("message", message);
+      console.log("message from middleware:", message);
       // Add the message to the messages list
       const formattedMessage: Message = {
         _id: Date.now().toString(),
@@ -100,7 +100,22 @@ export function ChatCard({
         isOpenAI: message.isOpenAI || false,
         groupId: group._id || "",
       };
-      setMessages((prevMessages) => [...prevMessages, formattedMessage]);
+
+      // Use functional update to ensure we're working with the latest state
+      setMessages(prevMessages => {
+        // Check if message already exists to prevent duplicates
+        const messageExists = prevMessages.some(
+          msg => msg.message === formattedMessage.message && 
+                 msg.timestamp.getTime() === formattedMessage.timestamp.getTime()
+        );
+        
+        if (messageExists) {
+          return prevMessages;
+        }
+        
+        return [...prevMessages, formattedMessage];
+      });
+
       setLoading(false); // Stop loading when we receive the response
       if (onMessageSentOrReceived) onMessageSentOrReceived(formattedMessage);
     });
