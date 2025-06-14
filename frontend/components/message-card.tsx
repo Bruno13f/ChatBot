@@ -58,90 +58,99 @@ export function MessageCard({ message, isFromOwner, isWeather, timestamp, sender
     return colors[index];
   };
 
-  const temperaturesRaw = message.split(",").map(temp => parseFloat(temp.trim()));
-  let temperatures = [...temperaturesRaw];
+  if (isWeather) {
 
-  const formatDate = (date: Date) => {
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    return `${day}/${month}`;
-  };
+    const temperaturesRaw = message.split(",").map(temp => parseFloat(temp.trim()));
+    let temperatures = [...temperaturesRaw];
 
-  const generateDateLabels = (count: number) => {
-    const labels: string[] = [];
-    const date = new Date();
-    for (let i = 0; i < count; i++) {
-      const newDate = new Date(date);
-      newDate.setDate(date.getDate() + i);
-      labels.push(formatDate(newDate));
+    const formatDate = (date: Date) => {
+      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      return `${day}/${month}`;
+    };
+
+    const generateDateLabels = (count: number) => {
+      const labels: string[] = [];
+      const date = new Date();
+      for (let i = 0; i < count; i++) {
+        const newDate = new Date(date);
+        newDate.setDate(date.getDate() + i);
+        labels.push(formatDate(newDate));
+      }
+      return labels;
+    };
+
+    let labels = generateDateLabels(temperatures.length);
+
+    if (temperatures.length === 1) {
+      temperatures = [NaN, NaN, temperatures[0], NaN, NaN];
+      labels = generateDateLabels(temperatures.length);
     }
-    return labels;
-  };
 
-  let labels = generateDateLabels(temperatures.length);
 
-  if (temperatures.length === 1) {
-    temperatures = [NaN, NaN, temperatures[0], NaN, NaN];
-    labels = generateDateLabels(temperatures.length);
+    // Map the temperatures to colors
+    const pointBackgroundColor = isDark ? '#27272a' : '#ffffff';
+    const borderColor = isDark ? '#EEEBEBFF' : '#29292FFF';
+    const backgroundColor = isDark ? '#EEEBEBFF' : '#29292FFF';
+    const gridColor = isDark ? '#C1C1C3FF' : '#29292FFF';;
+
+    const chartData = {
+      labels,
+      datasets: [
+        {
+          label: 'Max Temperature (°C)',
+          data: temperatures,
+          borderColor,
+          backgroundColor,
+          fill: true,
+          tension: 0.4,
+          spanGaps: true,
+          pointBackgroundColor, // Apply dynamic point color based on temperature
+        },
+      ],
+    };
+
+    const chartOptions = {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          labels: {
+            color: !isDark ? '#000' : '#EEEBEBFF',
+          },
+        },
+        tooltip: {
+          backgroundColor: borderColor,
+          titleColor: isDark ? '#000' : '#fff',
+          bodyColor: isDark ? '#000' : '#fff',
+        },
+      },
+      scales: {
+        x: {
+          ticks: {
+            color: !isDark ? '#000' : '#EEEBEBFF',
+          },
+          grid: {
+            color: gridColor,
+          },
+        },
+        y: {
+          ticks: {
+            color: !isDark ? '#000' : '#EEEBEBFF',
+          },
+          grid: {
+            color: gridColor,
+          },
+        },
+      },
+    };
+
+    return (
+      <div className="w-full h-[300px]">
+        <Line data={chartData} options={chartOptions} />
+      </div>
+    )
   }
-
-
-  // Map the temperatures to colors
-  const pointBackgroundColor = isDark ? '#27272a' : '#ffffff';
-  const borderColor = isDark ? '#EEEBEBFF' : '#29292FFF';
-  const backgroundColor = isDark ? '#EEEBEBFF' : '#29292FFF';
-  const gridColor = isDark ? '#C1C1C3FF' : '#29292FFF';;
-
-  const chartData = {
-    labels,
-    datasets: [
-      {
-        label: 'Max Temperature (°C)',
-        data: temperatures,
-        borderColor,
-        backgroundColor,
-        fill: true,
-        tension: 0.4,
-        spanGaps: true,
-        pointBackgroundColor, // Apply dynamic point color based on temperature
-      },
-    ],
-  };
-
-  const chartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        labels: {
-          color: !isDark ? '#000' : '#EEEBEBFF',
-        },
-      },
-      tooltip: {
-        backgroundColor: borderColor,
-        titleColor: isDark ? '#000' : '#fff',
-        bodyColor: isDark ? '#000' : '#fff',
-      },
-    },
-    scales: {
-      x: {
-        ticks: {
-          color: !isDark ? '#000' : '#EEEBEBFF',
-        },
-        grid: {
-          color: gridColor,
-        },
-      },
-      y: {
-        ticks: {
-          color: !isDark ? '#000' : '#EEEBEBFF',
-        },
-        grid: {
-          color: gridColor,
-        },
-      },
-    },
-  };
 
   // Formatar o timestamp para HH:MM
   let timeString = "";
@@ -185,13 +194,7 @@ export function MessageCard({ message, isFromOwner, isWeather, timestamp, sender
               ? "bg-secondary-foreground text-secondary text-left self-start" 
               : "bg-secondary text-right self-end"
         }`}>
-          {isWeather ? (
-            <div className="w-full h-[300px]">
-              <Line data={chartData} options={chartOptions} />
-            </div>
-          ) : (
-            <ReactMarkdown>{message}</ReactMarkdown>
-          )}
+          <ReactMarkdown>{message}</ReactMarkdown>
           {timeString && (
             <div className="text-xs text-muted-foreground mt-1 text-right">{timeString}</div>
           )}

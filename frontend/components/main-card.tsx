@@ -184,13 +184,13 @@ export function MainCard({ userId }: MainCardProps) {
             />
           </TabsContent>
           <TabsContent value="openai">
-            <JokesCard user={user} />
+            <JokesCard user={user} group={selectedGroup} />
           </TabsContent>
           <TabsContent value="jokes">
-            <JokesCard user={user} />
+            <JokesCard user={user} group={selectedGroup} />
           </TabsContent>
           <TabsContent value="weather">
-            <JokesCard user={user} />
+            <JokesCard user={user} group={selectedGroup} />
           </TabsContent>
         </Tabs>
       </div>

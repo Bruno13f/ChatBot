@@ -127,24 +127,47 @@ exports.postMessage = async (req, res) => {
 };
 
 exports.getJokes = async (req, res) => {
-  const userId = req.params.userId;
-  if (!userId) {
-    return res.status(400).json({ error: "Missing user id" });
+  const groupId = req.params.groupId;
+
+  console.log("\n🤼 Getting jokes from group: ", groupId);
+
+  if (!groupId) {
+    console.log("❌ Missing group id");
+    return res.status(400).json({ error: "Missing group id" });
   }
 
-  const user = await User.findById(userId);
-  if (!user) {
-    return res.status(404).json({ error: "User not found" });
+  const group = await Group.findById(groupId);
+  if (!group) {
+    console.log("❌ Group not found");
+    return res.status(404).json({ error: "Group not found" });
   }
 
-  try {
-    const jokes = await Message.find({ userId, isJoke: true })
-      .select("message timestamp -_id")
-      .sort({ timestamp: -1 });
-    res.json(jokes);
-  } catch (err) {
+  const user = req.user;
+  if (!group.members.includes(user._id)) {
+    console.log("❌ User is not a member of the group");
+    return res
+      .status(403)
+      .json({ error: "User is not a member of the group" });
+  }
+
+  try{
+    const jokes = await Message.find({ groupId, isJoke: true })
+    .select("message timestamp -_id")
+    .sort({ timestamp: -1 });
+
+    // Remove the "🤣 **Joke:**" prefix from each joke
+    const formattedJokes = jokes.map(joke => ({
+      ...joke.toObject(),
+      message: joke.message.replace(/^🤣\s*\*\*Joke:\*\*\s*/, '')
+    }));
+
+    console.log("✅ Jokes fetched successfully");
+    res.json(formattedJokes);
+  }catch(err){
+    console.log("❌ Failed to get jokes", err);
     res
       .status(500)
-      .json({ error: "Failed to fetch jokes", details: err.message });
+      .json({ error: "Failed to get jokes", details: err.message });
   }
+  
 };

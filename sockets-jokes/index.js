@@ -77,34 +77,105 @@ const setupSocketHandlers = () => {
 
     const { command, args, originalMessage } = data;
 
-    try {
-      // Process joke command
-      const jokeText = await processJokeCommand(args);
+    const token = originalMessage.token;
+    const groupId = originalMessage.groupId;
 
-      // Send the response back to the middleware
-      socket.emit("service_response", {
-        text: jokeText,
-        isJoke: true,
-        isWeather: false,
-        isOpenAI: false,
-        originalMessage,
-      });
+    console.log("Original message:", originalMessage);
 
-      // Save joke to database
-      await saveJokeToDatabase(jokeText, originalMessage);
-    } catch (error) {
-      console.error("Error processing joke command:", error);
+    if (command === "!joke") {
+      console.log("Processing joke command ", command, args);
+      try {
+        
+        const category = args[0]?.toLowerCase();
+        const validCategories = [
+          "programming",
+          "misc",
+          "dark",
+          "pun",
+          "spooky",
+          "christmas",
+        ];
 
-      socket.emit("service_response", {
-        text: `Failed to fetch joke: ${error.message}`,
-        isJoke: true,
-        isWeather: false,
-        isOpenAI: false,
-        originalMessage,
-      });
+        if (category && !validCategories.includes(category)) {
+          console.log("Invalid category:", category);
+          const text = `**⚠️ Invalid Category:** Available categories are programming, misc, dark, pun, spooky, christmas.`;
+          await saveJokeToAPI(text, groupId, token, false);
+          socket.emit("service_response", {
+            text,
+            isJoke: false,
+            isWeather: false,
+            isOpenAI: false,
+            originalMessage,
+          });
+          return;
+        }
+
+        // Fetch joke from API using environment variable
+        const baseUrl = "https://v2.jokeapi.dev/joke";
+        const url = category
+          ? `${baseUrl}/${category}?safe-mode`
+          : `${baseUrl}/Any?safe-mode`;
+
+        console.log("Fetching joke from:", url);
+        const response = await fetch(url);
+        const joke = await response.json();
+
+        let jokeText = "";
+        if (joke.type === "single") {
+          jokeText = joke.joke;
+        } else {
+          jokeText = `${joke.setup}\n\n${joke.delivery}`;
+        }
+
+        console.log("Sending joke response:", jokeText);
+
+        const text = `🤣 **Joke:**\n\n${jokeText}`;
+
+        // Save joke to database
+        await saveJokeToAPI(text, groupId, token, true);
+        // Send the response back to the middleware
+        socket.emit("service_response", {
+          text,
+          isJoke: true,
+          isWeather: false,
+          isOpenAI: false,
+          originalMessage,
+        });
+      } catch (error) {
+        console.error("Error processing joke command:", error);
+        const text = `Failed to fetch joke: ${error.message}`;
+        await saveJokeToAPI(text, groupId, token, false);
+        socket.emit("service_response", {
+          text,
+          isJoke: false,
+          isWeather: false,
+          isOpenAI: false,
+          originalMessage,
+        });
+      }
     }
   });
 };
+
+const saveJokeToAPI = async (joke, groupId, token, isJoke) => {
+  const backendUrl = process.env.BACKEND_URI || "http://localhost:8000";
+  const res = await fetch(`${backendUrl}/groups/${groupId}/messages`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      message: joke,
+      sender: "system",
+      isJoke: isJoke,
+      isWeather: false,
+      isOpenAI: false,
+    }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || "Something went wrong.");
+}
 
 // Start the service
 setupSocketHandlers();

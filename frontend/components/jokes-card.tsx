@@ -7,12 +7,15 @@ import { H4 } from "@/components/ui/typography"
 import { JokesCarousel } from "./jokes-carousel"
 import { Loader2 } from "lucide-react"
 import { User } from "@/models/user"
+import { Group } from "@/models/group"
+import { getJokesOfGroup } from "@/services/messages"
 
 interface JokesCardProps {
   user: User | null;
+  group: Group | null;
 }
 
-export function JokesCard({user}: JokesCardProps) {
+export function JokesCard({user, group}: JokesCardProps) {
   const [joke, setJoke] = React.useState<string | null>(null)
   const [jokes, setJokes] = React.useState<string[]>([]);
   const [fetching, setFetching] = React.useState(true);
@@ -21,25 +24,9 @@ export function JokesCard({user}: JokesCardProps) {
   const fetchJokes = async () => {
     if (!user) return;
     setFetching(true);
-    
-    const token = localStorage.getItem("token"); // or use cookies, context, etc.
-
-    if (!token) {
-      setFetching(false);
-      throw new Error("No token found");
-    }
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URI}/jokes/${user._id}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
-      if (!response.ok) {
-        throw new Error("Failed to fetch jokes");
-      }
-      const data = await response.json();
+      const data = await getJokesOfGroup(group?._id || "");
       if (data.length === 0) {
         setFetching(false);
         return;
@@ -62,7 +49,7 @@ export function JokesCard({user}: JokesCardProps) {
       <CardHeader>
         <CardTitle><H4>History of Jokes</H4></CardTitle>
       </CardHeader>
-      <CardContent className="flex-1 pt-4">
+      <CardContent className="flex-1 pt-0 md:pt-4 lg:pt-4 h-full">
         {fetching ? (
         <div className="flex justify-center items-center h-full">
           <Loader2 className="animate-spin text-gray-500 w-6 h-6" />

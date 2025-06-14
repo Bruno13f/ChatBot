@@ -31,10 +31,10 @@ export function JokesCarousel({ jokes }: JokesCarouselProps) {
         align: "start",
       }}
       orientation="vertical"
-      className="w-full mt-10"
+      className="w-full mt-4 md:mt-0 lg:mt-0"
       setApi={setCarouselApi}
     >
-      <CarouselContent className="-mt-2 h-[240px] space-y-1">
+      <CarouselContent className="-mt-2 h-[580] space-y-1">
         {jokes.length > 0 ? (
           jokes.map((joke, index) => (
             <CarouselItem key={index} className="!basis-auto">

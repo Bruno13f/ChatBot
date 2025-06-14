@@ -84,26 +84,58 @@ export function ChatCard({
     if (!user || !group) return;
 
     initMiddlewareSocket((message) => {
+      console.log("message from middleware:", message);
+      console.log("current messages state:", messages);
+      
       // Add the message to the messages list
-      setMessages((prevMessages) => [
-        ...prevMessages,
-        {
-          _id: Date.now().toString(),
-          timestamp: new Date(),
-          message: message.message,
-          sender: {
-            name: "system",
-            userId: "system",
-            profilePicture: "",
-          },
-          isJoke: message.isJoke,
-          isWeather: message.isWeather,
-          isOpenAI: message.isOpenAI,
-          groupId: group._id || "",
+      const formattedMessage: Message = {
+        _id: Date.now().toString(),
+        timestamp: new Date(),
+        message: message.text,
+        sender: {
+          name: "system",
+          userId: "system",
+          profilePicture: "",
         },
-      ]);
+        isJoke: message.isJoke || false,
+        isWeather: message.isWeather || false,
+        isOpenAI: message.isOpenAI || false,
+        groupId: group._id || "",
+      };
+
+      console.log("formatted message:", formattedMessage);
+
+      // Use functional update to ensure we're working with the latest state
+      setMessages(prevMessages => {
+        console.log("previous messages:", prevMessages);
+        
+        // Check if message already exists to prevent duplicates
+        const messageExists = prevMessages.some(
+          msg => msg.message === formattedMessage.message && 
+                 Math.abs(new Date(msg.timestamp).getTime() - formattedMessage.timestamp.getTime()) < 1000
+        );
+        
+        console.log("message exists:", messageExists);
+        
+        if (messageExists) {
+          console.log("skipping duplicate message");
+          return prevMessages;
+        }
+        
+        const newMessages = [...prevMessages, formattedMessage];
+        console.log("new messages array:", newMessages);
+        return newMessages;
+      });
+
+      // Force a re-render by updating a state
+      setLoading(prev => !prev);
+      setLoading(prev => !prev);
+
       setLoading(false); // Stop loading when we receive the response
-      if (onMessageSentOrReceived) onMessageSentOrReceived(message);
+      if (onMessageSentOrReceived) {
+        console.log("calling onMessageSentOrReceived with:", formattedMessage);
+        onMessageSentOrReceived(formattedMessage);
+      }
     });
 
     initBackendSocket(user._id, group._id, (message) => {
@@ -258,6 +290,7 @@ export function ChatCard({
       // Focus the textarea after message is sent
       focusTextarea();
       if (onMessageSentOrReceived) onMessageSentOrReceived(data);
+
       return true;
     } catch (error) {
       console.error("Error sending message:", error);

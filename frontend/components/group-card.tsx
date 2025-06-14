@@ -73,7 +73,7 @@ export function GroupCard({ group, maxAvatars = 5, isSelected = false }: GroupCa
   };
 
   return (
-    <Card className={`w-[99%] h-full py-0 hover:bg-muted cursor-pointer ${isSelected ? 'bg-muted' : 'bg-background'}`}>
+    <Card className={`w-[240px] md:w-[280px] lg:w-[300px] h-full py-0 hover:bg-muted cursor-pointer ${isSelected ? 'bg-muted' : 'bg-background'}`}>
       <div className="flex flex-row items-center justify-start gap-x-2 pl-3 md:pl-4 lg:pl-4 py-4">
         {group.groupPicture ? (
           <Avatar className="cursor-pointer h-10 w-10">
@@ -109,7 +109,7 @@ export function GroupCard({ group, maxAvatars = 5, isSelected = false }: GroupCa
                 <span className="text-xs font-medium text-muted-foreground truncate max-w-[80px]">
                   {group.lastMessage.sender.name}:
                 </span>
-                <span className="text-xs text-muted-foreground truncate max-w-[110px] lg:max-w-100">
+                <span className="text-xs text-muted-foreground truncate max-w-[120px] md:max-w-[150px] lg:max-w-[170px]">
                   {group.lastMessage.message}
                 </span>
               </>
