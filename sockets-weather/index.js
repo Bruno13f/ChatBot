@@ -1,9 +1,9 @@
-require('dotenv').config();
-const { io } = require("socket.io-client"); 
-const NodeGeocoder = require('node-geocoder');
+require("dotenv").config();
+const { io } = require("socket.io-client");
+const NodeGeocoder = require("node-geocoder");
 
 const options = {
-  provider: 'openstreetmap'
+  provider: "openstreetmap",
 };
 
 const geocoder = NodeGeocoder(options);
@@ -17,10 +17,9 @@ socket.on("connect", () => {
   socket.emit("register", ["!weather"]);
 });
 
-
 socket.on("process_command", async (data) => {
   const { command, args, originalMessage } = data;
-  
+
   if (command === "!weather") {
     console.log("Processing weather command ", command, args);
 
@@ -28,15 +27,20 @@ socket.on("process_command", async (data) => {
 
     if (args.length !== 2) {
       const text = "**⚠️ Usage:** `!weather <city> <days>`";
-      await saveWeatherToAPI(text, originalMessage.groupId, originalMessage.token, false);
+      await saveWeatherToAPI(
+        text,
+        originalMessage.groupId,
+        originalMessage.token,
+        false
+      );
       socket.emit("service_response", {
         text: text,
         isJoke: false,
         isWeather: false,
         isOpenAI: false,
         originalMessage: {
-          clientId: originalMessage.clientId
-        }
+          clientId: originalMessage.clientId,
+        },
       });
       return;
     }
@@ -45,15 +49,20 @@ socket.on("process_command", async (data) => {
 
     if (!validDays.includes(parseInt(args[1]))) {
       const text = "**⚠️ Invalid Days:** 1, 3, 7, 14, 16";
-      await saveWeatherToAPI(text, originalMessage.groupId, originalMessage.token, false);
+      await saveWeatherToAPI(
+        text,
+        originalMessage.groupId,
+        originalMessage.token,
+        false
+      );
       socket.emit("service_response", {
         text: text,
         isJoke: false,
         isWeather: false,
         isOpenAI: false,
         originalMessage: {
-          clientId: originalMessage.clientId
-        }
+          clientId: originalMessage.clientId,
+        },
       });
       return;
     }
@@ -65,58 +74,71 @@ socket.on("process_command", async (data) => {
 
     if (coordinates === -1) {
       const text = "❌ Could not find coordinates for the given city.";
-      await saveWeatherToAPI(text, originalMessage.groupId, originalMessage.token, false);
+      await saveWeatherToAPI(
+        text,
+        originalMessage.groupId,
+        originalMessage.token,
+        false
+      );
       socket.emit("service_response", {
         text: text,
         isJoke: false,
         isWeather: false,
         isOpenAI: false,
         originalMessage: {
-          clientId: originalMessage.clientId
-        }
+          clientId: originalMessage.clientId,
+        },
       });
       return;
     }
 
-    try{
-
-      const temperatures = await fetchWeather(coordinates[0], coordinates[1], days);
-      const text = temperatures.join(',');
-      await saveWeatherToAPI(text, originalMessage.groupId, originalMessage.token, true);
+    try {
+      const temperatures = await fetchWeather(
+        coordinates[0],
+        coordinates[1],
+        days
+      );
+      const text = temperatures.join(",");
+      await saveWeatherToAPI(
+        text,
+        originalMessage.groupId,
+        originalMessage.token,
+        true
+      );
       socket.emit("service_response", {
         text: text,
         isJoke: false,
         isWeather: true,
         isOpenAI: false,
         originalMessage: {
-          clientId: originalMessage.clientId
-        }
+          clientId: originalMessage.clientId,
+        },
       });
-
-    }catch(error){
-
-      const text = "❌ Error fetching max temperature for the given city and days.";
-      await saveWeatherToAPI(text, originalMessage.groupId, originalMessage.token, false);
+    } catch (error) {
+      const text =
+        "❌ Error fetching max temperature for the given city and days.";
+      await saveWeatherToAPI(
+        text,
+        originalMessage.groupId,
+        originalMessage.token,
+        false
+      );
       socket.emit("service_response", {
         text: text,
         isJoke: false,
         isWeather: false,
         isOpenAI: false,
         originalMessage: {
-          clientId: originalMessage.clientId
-        }
+          clientId: originalMessage.clientId,
+        },
       });
-      
     }
-
   }
-  
-  
 });
 
 socket.on("disconnect", () => {
   console.log("Disconnected from middleware");
-}); 
+});
 
 const fetchWeather = async (lat, long, days) => {
   const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${long}&daily=temperature_2m_max&forecast_days=${days}`;
@@ -136,13 +158,12 @@ const fetchWeather = async (lat, long, days) => {
 
     // Accessing the daily maximum temperatures
     const temperatures = data.daily.temperature_2m_max;
-    console.log('Maximum temperatures for the next days:');
+    console.log("Maximum temperatures for the next days:");
     temperatures.forEach((temp, index) => {
       console.log(`Day ${index + 1}: ${temp}°C`);
     });
-    
-    return temperatures;
 
+    return temperatures;
   } catch (error) {
     console.error("Error fetching weather:", error);
   }
@@ -153,16 +174,18 @@ const getCoordinates = async (city) => {
     const res = await geocoder.geocode(city);
     if (res.length > 0) {
       const { latitude, longitude } = res[0];
-      console.log(`${city} => Latitude: ${res[0].latitude}, Longitude: ${res[0].longitude}`);
+      console.log(
+        `${city} => Latitude: ${res[0].latitude}, Longitude: ${res[0].longitude}`
+      );
       return [latitude, longitude];
     } else {
-      console.log('No result found.');
+      console.log("No result found.");
       return -1;
     }
   } catch (err) {
     console.error(err);
   }
-}
+};
 
 const saveWeatherToAPI = async (weather, groupId, token, isWeather) => {
   const backendUrl = process.env.BACKEND_URI || "http://localhost:8000";
@@ -170,7 +193,7 @@ const saveWeatherToAPI = async (weather, groupId, token, isWeather) => {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${token}`
+      Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify({
       message: weather,
@@ -178,11 +201,9 @@ const saveWeatherToAPI = async (weather, groupId, token, isWeather) => {
       isJoke: false,
       isWeather: isWeather,
       isOpenAI: false,
-    })
+    }),
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.message || "Something went wrong.");
   return data;
 };
-
-
