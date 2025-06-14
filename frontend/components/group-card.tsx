@@ -37,7 +37,7 @@ function useResponsiveAvatarMax() {
 export function GroupCard({ group, maxAvatars = 5, isSelected = false }: GroupCardProps) {
   const maxAvatarsLocal = useResponsiveAvatarMax();
 
-  // Function to get initials from a name (you'll need to implement this based on your user data)
+  // Function to get initials from a name
   const getInitials = (name: string) => {
     return name
       .split(' ')
@@ -54,49 +54,73 @@ export function GroupCard({ group, maxAvatars = 5, isSelected = false }: GroupCa
     return colors[index];
   };
 
+  // Function to format the last message timestamp
+  const formatTimestamp = (timestamp: Date) => {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diff = now.getTime() - date.getTime();
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    
+    if (days === 0) {
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } else if (days === 1) {
+      return 'Yesterday';
+    } else if (days < 7) {
+      return date.toLocaleDateString([], { weekday: 'short' });
+    } else {
+      return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+    }
+  };
+
   return (
     <Card className={`w-[99%] h-full py-0 hover:bg-muted cursor-pointer ${isSelected ? 'bg-muted' : 'bg-background'}`}>
-        <div className="flex flex-row items-center justify-start gap-x-2 pl-3 md:pl-4 lg:pl-4 py-4">
-            {group.groupPicture ? (
-              // Show group picture if available
-              <Avatar className="cursor-pointer h-10 w-10">
-                <AvatarImage src={group.groupPicture} alt={group.name} />
-                <AvatarFallback className={`${getRandomColor(group._id)} text-white`}>
-                  {getInitials(group.name)}
+      <div className="flex flex-row items-center justify-start gap-x-2 pl-3 md:pl-4 lg:pl-4 py-4">
+        {group.groupPicture ? (
+          <Avatar className="cursor-pointer h-10 w-10">
+            <AvatarImage src={group.groupPicture} alt={group.name} />
+            <AvatarFallback className={`${getRandomColor(group._id)} text-white`}>
+              {getInitials(group.name)}
+            </AvatarFallback>
+          </Avatar>
+        ) : group.members.length > 1 ? (
+          <AvatarGroup className="flex items-center" max={group.members.length > maxAvatarsLocal ? maxAvatarsLocal : 0}>
+            {group.members.map((member) => (
+              <Avatar key={member._id} className="-ml-2 first:ml-0 cursor-pointer">
+                <AvatarImage src={member.profilePicture || undefined} alt={`User ${member._id}`} />
+                <AvatarFallback className={`${getRandomColor(member._id)} text-white`}>
+                  {getInitials(member.name)}
                 </AvatarFallback>
               </Avatar>
-            ) : group.members.length > 1 ? (
-              // Show member avatars if no group picture and multiple members
-              <AvatarGroup className="flex items-center" max={group.members.length > maxAvatarsLocal ? maxAvatarsLocal : 0}>
-                {group.members.map((member) => (
-                  <Avatar key={member._id} className="-ml-2 first:ml-0 cursor-pointer">
-                    <AvatarImage src={member.profilePicture || undefined} alt={`User ${member._id}`} />
-                    <AvatarFallback className={`${getRandomColor(member._id)} text-white`}>
-                      {getInitials(member.name)}
-                    </AvatarFallback>
-                  </Avatar>
-                ))}
-              </AvatarGroup>
-            ) : (
-              // Show single member avatar if no group picture and only one member
-              <Avatar className="cursor-pointer">
-                <AvatarImage src={group.members[0].profilePicture || undefined} alt={`User ${group.members[0]._id}`} />
-                <AvatarFallback className={`${getRandomColor(group.members[0]._id)} text-white`}>
-                  {getInitials(group.members[0].name)}
-                </AvatarFallback>
-              </Avatar>
-            )}
-            <div className="flex flex-col items-start gap-y-1 min-w-0">
-                <span className="text-s font-semibold tracking-tight truncate max-w-[110px] lg:max-w-100">{group.name}</span>
-                <span className="leading-none text-xs text-muted-foreground truncate max-w-[110px] lg:max-w-100">
-                    {typeof group.messageCount === 'number' 
-                      ? (group.messageCount === 0 
-                          ? 'No messages yet' 
-                          : `${group.messageCount} message${group.messageCount > 1 ? 's' : ''}`)
-                      : 'No messages yet'}
+            ))}
+          </AvatarGroup>
+        ) : (
+          <Avatar className="cursor-pointer">
+            <AvatarImage src={group.members[0].profilePicture || undefined} alt={`User ${group.members[0]._id}`} />
+            <AvatarFallback className={`${getRandomColor(group.members[0]._id)} text-white`}>
+              {getInitials(group.members[0].name)}
+            </AvatarFallback>
+          </Avatar>
+        )}
+        <div className="flex flex-col flex-1 min-w-0 items-start justify-start ml-2">
+          <span className="text-s font-semibold tracking-tight truncate max-w-[110px] lg:max-w-100">{group.name}</span>
+          <div className="flex gap-x-1">
+            {group.lastMessage ? (
+              <>
+                <span className="text-xs font-medium text-muted-foreground truncate max-w-[80px]">
+                  {group.lastMessage.sender.name}:
                 </span>
-            </div>
+                <span className="text-xs text-muted-foreground truncate max-w-[110px] lg:max-w-100">
+                  {group.lastMessage.message}
+                </span>
+              </>
+            ) : (
+              <span className="text-xs text-muted-foreground">
+                No messages yet
+              </span>
+            )}
+          </div>
         </div>
+      </div>
     </Card>
   );
 }

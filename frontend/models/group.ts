@@ -11,4 +11,12 @@ export interface Group {
   createdAt?: Date;
   updatedAt?: Date;
   messageCount?: number;
+  lastMessage?: {
+    message: string;
+    sender: {
+      name: string;
+      userId: string;
+    };
+    timestamp: Date;
+  };
 }

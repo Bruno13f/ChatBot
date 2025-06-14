@@ -28,7 +28,7 @@ import { initBackendSocket, leaveBackendGroup } from "@/lib/socket-backend";
 interface ChatCardProps {
   user: User | null;
   group: Group | null;
-  onMessageSentOrReceived?: () => void;
+  onMessageSentOrReceived?: (message: Message) => void;
 }
 
 export function ChatCard({
@@ -90,7 +90,7 @@ export function ChatCard({
         {
           _id: Date.now().toString(),
           timestamp: new Date(),
-          message: message.text,
+          message: message.message,
           sender: {
             name: "system",
             userId: "system",
@@ -103,6 +103,7 @@ export function ChatCard({
         },
       ]);
       setLoading(false); // Stop loading when we receive the response
+      if (onMessageSentOrReceived) onMessageSentOrReceived(message);
     });
 
     initBackendSocket(user._id, group._id, (message) => {
@@ -113,7 +114,7 @@ export function ChatCard({
       }
       setMessages((prevMessages) => [...prevMessages, message]);
       setLoading(false);
-      if (onMessageSentOrReceived) onMessageSentOrReceived();
+      if (onMessageSentOrReceived) onMessageSentOrReceived(message);
     });
 
     return () => {
@@ -224,7 +225,8 @@ export function ChatCard({
     const token = localStorage.getItem("token");
 
     if (!token) {
-      throw new Error("No token found");
+      console.error("No token found");
+      return false;
     }
 
     try {
@@ -255,10 +257,10 @@ export function ChatCard({
       setTextareaKey((prev) => prev + 1); // Force textarea recreation with auto-focus
       // Focus the textarea after message is sent
       focusTextarea();
-      if (onMessageSentOrReceived) onMessageSentOrReceived();
+      if (onMessageSentOrReceived) onMessageSentOrReceived(data);
       return true;
     } catch (error) {
-      console.error("Error saving message to API:", error);
+      console.error("Error sending message:", error);
       return false;
     }
   };
