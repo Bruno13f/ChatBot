@@ -84,26 +84,25 @@ export function ChatCard({
     if (!user || !group) return;
 
     initMiddlewareSocket((message) => {
+      console.log("message", message);
       // Add the message to the messages list
-      setMessages((prevMessages) => [
-        ...prevMessages,
-        {
-          _id: Date.now().toString(),
-          timestamp: new Date(),
-          message: message.message,
-          sender: {
-            name: "system",
-            userId: "system",
-            profilePicture: "",
-          },
-          isJoke: message.isJoke,
-          isWeather: message.isWeather,
-          isOpenAI: message.isOpenAI,
-          groupId: group._id || "",
+      const formattedMessage: Message = {
+        _id: Date.now().toString(),
+        timestamp: new Date(),
+        message: message.text,
+        sender: {
+          name: "system",
+          userId: "system",
+          profilePicture: "",
         },
-      ]);
+        isJoke: message.isJoke || false,
+        isWeather: message.isWeather || false,
+        isOpenAI: message.isOpenAI || false,
+        groupId: group._id || "",
+      };
+      setMessages((prevMessages) => [...prevMessages, formattedMessage]);
       setLoading(false); // Stop loading when we receive the response
-      if (onMessageSentOrReceived) onMessageSentOrReceived(message);
+      if (onMessageSentOrReceived) onMessageSentOrReceived(formattedMessage);
     });
 
     initBackendSocket(user._id, group._id, (message) => {
@@ -258,6 +257,7 @@ export function ChatCard({
       // Focus the textarea after message is sent
       focusTextarea();
       if (onMessageSentOrReceived) onMessageSentOrReceived(data);
+
       return true;
     } catch (error) {
       console.error("Error sending message:", error);

@@ -37,6 +37,7 @@ router.get("/jokes/:userId", authenticateToken, getJokes);
 
 router.post("/groups/:groupId/messages", authenticateToken, postMessage);
 router.get("/groups/:groupId/messages", authenticateToken, getMessages);
+router.get("/groups/:groupId/jokes", authenticateToken, getJokes);
 router.get("/users/:userId/groups", authenticateToken, getGroupsFromUser);
 router.get("/users", authenticateToken, getAllUsers);
 router.get("/users/:userId", authenticateToken, getUserById);
