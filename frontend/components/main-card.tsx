@@ -70,6 +70,21 @@ export function MainCard({userId}: MainCardProps) {
     }
   }, [groups]);
 
+  // Função para incrementar messageCount do grupo selecionado
+  const incrementSelectedGroupMessageCount = () => {
+    if (!selectedGroup) return;
+    setGroups((prevGroups) =>
+      prevGroups.map((g) =>
+        g._id === selectedGroup._id
+          ? { ...g, messageCount: (g.messageCount || 0) + 1 }
+          : g
+      )
+    );
+    setSelectedGroup((prev) =>
+      prev ? { ...prev, messageCount: (prev.messageCount || 0) + 1 } : prev
+    );
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center w-full h-full">
@@ -94,7 +109,7 @@ export function MainCard({userId}: MainCardProps) {
             <TabsTrigger value="weather">Weather</TabsTrigger>
           </TabsList>
           <TabsContent value="chat">
-            <ChatCard user={user} group={selectedGroup} />
+            <ChatCard user={user} group={selectedGroup} onMessageSentOrReceived={incrementSelectedGroupMessageCount} />
           </TabsContent>
           <TabsContent value="openai">
             <JokesCard user={user} />

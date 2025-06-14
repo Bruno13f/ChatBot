@@ -89,7 +89,11 @@ export function GroupCard({ group, maxAvatars = 5, isSelected = false }: GroupCa
             <div className="flex flex-col items-start gap-y-1 min-w-0">
                 <span className="text-s font-semibold tracking-tight truncate max-w-[110px] lg:max-w-100">{group.name}</span>
                 <span className="leading-none text-xs text-muted-foreground truncate max-w-[110px] lg:max-w-100">
-                    {"No messages yet"}
+                    {typeof group.messageCount === 'number' 
+                      ? (group.messageCount === 0 
+                          ? 'No messages yet' 
+                          : `${group.messageCount} message${group.messageCount > 1 ? 's' : ''}`)
+                      : 'No messages yet'}
                 </span>
             </div>
         </div>
