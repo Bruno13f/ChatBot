@@ -35,6 +35,9 @@ function useResponsiveAvatarMax() {
 }
 
 export function GroupCard({ group, maxAvatars = 5, isSelected = false }: GroupCardProps) {
+
+  console.log("GROUP", group);
+
   const maxAvatarsLocal = useResponsiveAvatarMax();
 
   // Function to get initials from a name
@@ -73,7 +76,7 @@ export function GroupCard({ group, maxAvatars = 5, isSelected = false }: GroupCa
   };
 
   return (
-    <Card className={`w-[240px] md:w-[280px] lg:w-[300px] h-full py-0 hover:bg-muted cursor-pointer ${isSelected ? 'bg-muted' : 'bg-background'}`}>
+    <Card className={`w-[260px] md:w-[280px] lg:w-[300px] h-full py-0 hover:bg-muted cursor-pointer ${isSelected ? 'bg-muted' : 'bg-background'}`}>
       <div className="flex flex-row items-center justify-start gap-x-2 pl-3 md:pl-4 lg:pl-4 py-4">
         {group.groupPicture ? (
           <Avatar className="cursor-pointer h-10 w-10">

@@ -53,8 +53,15 @@ export function GroupInfoCard({
   const [allUsers, setAllUsers] = useState<{ _id: string; name: string }[]>([]);
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
   const [infoText, setInfoText] = React.useState("Invite users...");
-  const isOwner = group.owner === userId;
+  const [currentGroup, setCurrentGroup] = React.useState(group);
+  const isOwner = currentGroup.owner === userId;
   const isFirstRender = React.useRef(true);
+
+  // Update currentGroup when group prop changes
+  React.useEffect(() => {
+    console.log("[GroupInfoCard] Group updated:", group);
+    setCurrentGroup(group);
+  }, [group]);
 
   // Function to get initials from a name
   const getInitials = (name: string) => {
@@ -83,12 +90,12 @@ export function GroupInfoCard({
 
   // Sort members to put the logged-in user first
   const sortedMembers = React.useMemo(() => {
-    return [...group.members].sort((a, b) => {
+    return [...currentGroup.members].sort((a, b) => {
       if (a._id === userId) return 1;
       if (b._id === userId) return -1;
       return 0;
     });
-  }, [group.members, userId]);
+  }, [currentGroup.members, userId]);
 
   React.useEffect(() => {
     async function fetchUsers() {
@@ -120,7 +127,7 @@ export function GroupInfoCard({
     if (selectedUserIds.length === 0) return;
     try {
       const updatedGroup = await ToastPromise(
-        addUsersToGroup(group._id, selectedUserIds),
+        addUsersToGroup(currentGroup._id, selectedUserIds),
         "Adding users...",
         "Users added to group!",
         "Failed to add users to group."
@@ -138,13 +145,13 @@ export function GroupInfoCard({
   const handleDeleteGroup = async () => {
     try {
       ToastPromise(
-        deleteGroup(group._id),
+        deleteGroup(currentGroup._id),
         "Deleting group...",
         "Group deleted successfully!",
         "Failed to delete group."
       );
       setIsDialogOpen(false);
-      if (onGroupDeleted) onGroupDeleted(group._id);
+      if (onGroupDeleted) onGroupDeleted(currentGroup._id);
     } catch (error) {
       console.log(error);
     }
@@ -152,10 +159,10 @@ export function GroupInfoCard({
 
   const handleLeaveGroup = async () => {
     try {
-      await leaveGroup(group._id);
+      await leaveGroup(currentGroup._id);
       setIsDialogOpen(false);
       ToastSuccess("You left the group!");
-      if (onGroupDeleted) onGroupDeleted(group._id);
+      if (onGroupDeleted) onGroupDeleted(currentGroup._id);
     } catch (error) {
       ToastError(
         error instanceof Error ? error.message : "Failed to leave group."
@@ -167,13 +174,13 @@ export function GroupInfoCard({
     if (!isOwner) return;
     try {
       await ToastPromise(
-        removeMemberFromGroup(group._id, memberId),
+        removeMemberFromGroup(currentGroup._id, memberId),
         "Removing member...",
         "Member removed successfully!",
         "Failed to remove member."
       );
-      group.members = group.members.filter((member) => member._id !== memberId);
-      if (onGroupUpdated) onGroupUpdated(group);
+      currentGroup.members = currentGroup.members.filter((member) => member._id !== memberId);
+      if (onGroupUpdated) onGroupUpdated(currentGroup);
     } catch (error) {
       console.log(error);
     }
@@ -184,16 +191,16 @@ export function GroupInfoCard({
       <div className="flex flex-col items-center justify-center">
         <Avatar className="size-22">
           <AvatarImage
-            src={group.groupPicture || undefined}
-            alt={group.name}
+            src={currentGroup.groupPicture || undefined}
+            alt={currentGroup.name}
           />
           <AvatarFallback className="bg-gray-400 text-white">
-            {group.name?.slice(0, 2).toUpperCase()}
+            {currentGroup.name?.slice(0, 2).toUpperCase()}
           </AvatarFallback>
         </Avatar>
-        <h1 className="text-[1rem] font-regular mt-4">{group.name}</h1>
+        <h1 className="text-[1rem] font-regular mt-4">{currentGroup.name}</h1>
         <h2 className="text-sm font-regular text-muted-foreground">
-          {group.members.length} members
+          {currentGroup.members.length} members
         </h2>
         <div className="flex flex-row gap-2 mt-4">
           {isOwner && (
@@ -241,12 +248,12 @@ export function GroupInfoCard({
           <CardWidget onClose={() => setShowEditGroup(false)}>
             <GroupActions
               isCreate={false}
-              initialName={group.name}
-              initialPicture={group.groupPicture}
+              initialName={currentGroup.name}
+              initialPicture={currentGroup.groupPicture}
               onSubmit={async (name: string, groupPicture?: File) => {
                 try {
                   const updated = await updateGroup(
-                    group._id,
+                    currentGroup._id,
                     name,
                     groupPicture
                   );
@@ -259,7 +266,7 @@ export function GroupInfoCard({
               }}
               onDeletePicture={async () => {
                 try {
-                  const updated = await deleteGroupPicture(group._id);
+                  const updated = await deleteGroupPicture(currentGroup._id);
                   ToastSuccess("Group picture deleted successfully!");
                   if (onGroupUpdated) onGroupUpdated(updated);
                 } catch {
@@ -274,7 +281,7 @@ export function GroupInfoCard({
           {isOwner && (
             <>
               <Combobox
-                groupMembers={group.members}
+                groupMembers={currentGroup.members}
                 users={allUsers}
                 onAddUser={handleAddUser}
                 infoText={infoText}

@@ -245,6 +245,24 @@ exports.editGroup = async (req, res) => {
       "_id name profilePicture"
     );
 
+    const io = req.app.get("io");
+    const userSockets = req.app.get("userSockets");
+    if (io) {
+      if (populatedGroup) {
+        // Emit group update to each member individually
+        populatedGroup.members.forEach(member => {
+          const memberSocketId = userSockets.get(member._id.toString());
+          if (memberSocketId) {
+            console.log(`[SOCKET] Emitting group update to member ${member._id}`);
+            io.to(memberSocketId).emit("groupUpdated", {
+              groupId,
+              group: formatGroup(populatedGroup)
+            });
+          }
+        });
+      }
+    }
+
     console.log("✅ Group updated successfully");
     res.json({
       success: true,
@@ -334,74 +352,38 @@ exports.deleteGroupPicture = async (req, res) => {
  * Delete group
  */
 exports.deleteGroup = async (req, res) => {
-  const groupId = req.params.groupId;
-  const user = req.user;
-  const io = req.app.get("io"); // Adicionado para emitir evento
-
-  console.log("\n🤼 Deleting group with id: ", groupId);
-
-  if (!groupId) {
-    console.log("❌ Missing group id");
-    return res.status(400).json({ message: "Missing group id" });
-  }
-
   try {
+    const { groupId } = req.params;
     const group = await Group.findById(groupId);
+
     if (!group) {
-      console.log("❌ Group not found");
       return res.status(404).json({ message: "Group not found" });
     }
-    // Only owner can delete
-    if (group.owner.toString() !== user._id.toString()) {
-      console.log("❌ Only the group owner can delete the group.");
-      return res
-        .status(403)
-        .json({ message: "Only the group owner can delete the group." });
-    }
 
-    // Delete all messages associated with this group
-    try {
-      console.log("🗑️ Deleting all messages for the group...");
-      await Message.deleteMany({ groupId });
-      console.log("✅ All messages deleted successfully");
-    } catch (messageError) {
-      console.log("❌ Error deleting group messages:", messageError);
-      res.status(500).json({
-        error: "Failed to delete group",
-        details: messageError.message,
+    // Get all members before deleting the group
+    const members = group.members;
+
+    // Delete the group
+    await Group.findByIdAndDelete(groupId);
+
+    // Emit removal event to all group members
+    const io = req.app.get("io");
+    const userSockets = req.app.get("userSockets");
+    
+    if (io && userSockets) {
+      members.forEach(memberId => {
+        const socketId = userSockets.get(memberId.toString());
+        if (socketId) {
+          console.log(`[SOCKET] Notifying member ${memberId} about group deletion`);
+          io.to(socketId).emit("removedFromGroup", { groupId });
+        }
       });
     }
 
-    // Delete group picture from Azure if it exists
-    if (group.groupPicture) {
-      try {
-        console.log("🗑️ Deleting group picture from Azure...");
-        await deleteGroupPic(group.groupPicture);
-        console.log("✅ Group picture deleted from Azure");
-      } catch (deleteError) {
-        console.log(
-          "⚠️ Warning: Failed to delete group picture from Azure:",
-          deleteError.message
-        );
-        // Continue with group deletion even if picture deletion fails
-      }
-    }
-
-    await Group.deleteOne({ _id: groupId });
-    user.groups = user.groups.filter((g) => g.toString() !== groupId);
-    await user.save();
-    // Emitir evento para todos os membros do grupo
-    io.to(`group_${groupId}`).emit("removedFromGroup", { groupId });
-    console.log(
-      "[SOCKET] Evento 'removedFromGroup' emitido para o grupo",
-      groupId
-    );
-    res.json({ success: true, message: "Group deleted successfully" });
-  } catch (err) {
-    console.log("❌ Error deleting group:", err);
-    res
-      .status(500)
-      .json({ error: "Failed to delete group", details: err.message });
+    res.json({ message: "Group deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting group:", error);
+    res.status(500).json({ message: "Error deleting group" });
   }
 };
 
@@ -424,6 +406,7 @@ exports.addMemberToGroup = async (req, res) => {
 
   try {
     const group = await Group.findById(groupId);
+
     if (!group) {
       console.log("❌ Group not found");
       return res.status(404).json({ message: "Group not found" });
@@ -435,6 +418,9 @@ exports.addMemberToGroup = async (req, res) => {
         .status(403)
         .json({ message: "Only the group owner can add members." });
     }
+
+    // Capture existing members before adding new ones
+    const existingMemberIds = group.members.map(m => m.toString());
 
     // Filter out users that are already members
     const newMembers = userIds.filter(
@@ -499,11 +485,18 @@ exports.addMemberToGroup = async (req, res) => {
       });
     }
 
-    // Populate members for response
-    const populatedGroup = await Group.findById(groupId).populate(
-      "members",
-      "_id name profilePicture"
-    );
+    // Emit group update only to existing members (not new ones)
+    existingMemberIds.forEach(memberId => {
+      const memberSocketId = userSockets.get(memberId);
+      if (memberSocketId) {
+        console.log(`[SOCKET] Emitting group update to existing member ${memberId}`);
+        io.to(memberSocketId).emit("groupUpdated", {
+          groupId,
+          group: populatedGroupForSocket
+        });
+      }
+    });
+
     console.log("✅ Users added to group successfully");
     res.json({
       success: true,
@@ -523,10 +516,9 @@ exports.addMemberToGroup = async (req, res) => {
  */
 exports.leaveGroup = async (req, res) => {
   const groupId = req.params.groupId;
-  const user = req.user;
-  const io = req.app.get("io"); // Adicionado para emitir evento
+  const userId = req.user._id;
 
-  console.log("\n🤼 Leaving group with id: ", groupId);
+  console.log("\n🤼 User leaving group:", userId, "from group:", groupId);
 
   if (!groupId) {
     console.log("❌ Missing group id");
@@ -539,42 +531,45 @@ exports.leaveGroup = async (req, res) => {
       console.log("❌ Group not found");
       return res.status(404).json({ message: "Group not found" });
     }
-    // Owner não pode sair do próprio grupo
-    if (group.owner.toString() === user._id.toString()) {
-      console.log(
-        "❌ Owner cannot leave their own group. Delete the group instead."
-      );
-      return res.status(400).json({
-        message:
-          "Owner cannot leave their own group. Delete the group instead.",
-      });
+
+    // Check if user is in the group
+    if (!group.members.includes(userId)) {
+      console.log("❌ User is not a member of this group");
+      return res.status(400).json({ message: "User is not a member of this group" });
     }
-    // Remove user do grupo
-    group.members = group.members.filter(
-      (m) => m.toString() !== user._id.toString()
-    );
+
+    // Remove user from group
+    group.members = group.members.filter(member => member.toString() !== userId.toString());
     await group.save();
-    // Remove grupo da lista do usuário
-    user.groups = user.groups.filter((g) => g.toString() !== groupId);
-    await user.save();
 
-    // Only emit to the user who left
+    console.log("group: ", group)
+
+    // Emit groupUpdated event to all users in the group
+    const io = req.app.get("io");
     const userSockets = req.app.get("userSockets");
-    const userSocketId = userSockets.get(user._id);
-    if (userSocketId) {
-      io.to(userSocketId).emit("removedFromGroup", { groupId });
-      console.log(
-        "[SOCKET] Emitted 'removedFromGroup' event to user who left",
-        user._id
-      );
+    if (io) {
+      // Get all members of the group
+      const group = await Group.findById(groupId).populate("members", "_id name profilePicture");
+      if (group) {
+        // Emit group update to each member individually
+        group.members.forEach(member => {
+          const memberSocketId = userSockets.get(member._id.toString());
+          if (memberSocketId) {
+            console.log(`[SOCKET] Emitting group update to member ${member._id}`);
+            io.to(memberSocketId).emit("groupUpdated", {
+              groupId,
+              group: formatGroup(group)
+            });
+          }
+        });
+      }
     }
 
+    console.log("✅ User left group successfully");
     res.json({ success: true, message: "Left group successfully" });
-  } catch (err) {
-    console.log("❌ Error leaving group:", err);
-    res
-      .status(500)
-      .json({ error: "Failed to leave group", details: err.message });
+  } catch (error) {
+    console.error("❌ Error leaving group:", error);
+    res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -607,6 +602,7 @@ exports.removeMemberFromGroup = async (req, res) => {
     await member.save();
 
     // Only emit to the removed member
+    const io = req.app.get("io");
     const userSockets = req.app.get("userSockets");
     const memberSocketId = userSockets.get(memberId);
     if (memberSocketId) {
@@ -615,6 +611,24 @@ exports.removeMemberFromGroup = async (req, res) => {
         "[SOCKET] Emitted 'removedFromGroup' event to removed member",
         memberId
       );
+    }
+
+    if (io) {
+      // Get all members of the group
+      const group = await Group.findById(groupId).populate("members", "_id name profilePicture");
+      if (group) {
+        // Emit group update to each member individually
+        group.members.forEach(member => {
+          const memberSocketId = userSockets.get(member._id.toString());
+          if (memberSocketId) {
+            console.log(`[SOCKET] Emitting group update to member ${member._id}`);
+            io.to(memberSocketId).emit("groupUpdated", {
+              groupId,
+              group: formatGroup(group)
+            });
+          }
+        });
+      }
     }
 
     res.json({

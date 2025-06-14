@@ -27,9 +27,7 @@ export const initMiddlewareSocket = (onMessage: (message: any) => void): Socket 
     // Handle incoming messages
     socketInstance.on('message', (message) => {
       console.log('Received message from middleware:', message);
-      if (onMessage) {
-        onMessage(message);
-      }
+      onMessage(message);
     });
   }
 

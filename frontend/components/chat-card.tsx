@@ -82,6 +82,28 @@ export function ChatCard({
   // Effect for initial mount and socket setup
   React.useEffect(() => {
     if (!user || !group) return;
+    
+    initMiddlewareSocket((message) => {
+      console.log("[MIDDLEWARE] Received direct message:", message);
+      // Add the message to the messages list
+      const formattedMessage: Message = {
+        _id: Date.now().toString(),
+        timestamp: new Date(),
+        message: message.text,
+        sender: {
+          name: "system",
+          userId: "system",
+          profilePicture: "",
+        },
+        isJoke: message.isJoke || false,
+        isWeather: message.isWeather || false,
+        isOpenAI: message.isOpenAI || false,
+        groupId: group._id || "",
+      };
+      setMessages((prevMessages) => [...prevMessages, formattedMessage]);
+      setLoading(false);
+      if (onMessageSentOrReceived) onMessageSentOrReceived(formattedMessage);
+    });
 
     const socket = initBackendSocket(user._id, group._id, () => {
       console.log("[SOCKET] Connected to backend");
@@ -95,9 +117,6 @@ export function ChatCard({
       
       // Skip if message is from the current user
       if (message.sender && message.sender.userId === user._id) return;
-      
-      // Skip system messages that are already handled by middleware
-      if (message.sender.name.toLowerCase() === "system") return;
 
       setMessages(prevMessages => {
         // Check if message already exists to prevent duplicates

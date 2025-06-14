@@ -144,7 +144,7 @@ io.on("connection", (socket) => {
       console.log(
         `Routing response to client ${response.originalMessage.clientId}`
       );
-      io.to(response.originalMessage.clientId).emit("message", {
+      socket.emit("message", {
         text: response.text,
         isJoke: response.isJoke || false,
         isWeather: response.isWeather || false,

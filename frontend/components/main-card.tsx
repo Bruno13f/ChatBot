@@ -38,18 +38,36 @@ export function MainCard({ userId }: MainCardProps) {
     });
 
     // Handle group updates (e.g., new last message)
-    const groupUpdateHandler = (data: { groupId: string; lastMessage: any }) => {
+    const groupUpdateHandler = (data: { groupId: string; lastMessage?: any; group?: Group }) => {
       console.log("[SOCKET] Group update received:", data);
-      setGroups(prev => prev.map(group => {
-        if (group._id === data.groupId) {
-          console.log("[SOCKET] Updating group:", group._id, "with new last message:", data.lastMessage);
-          return {
-            ...group,
-            lastMessage: data.lastMessage
-          };
-        }
-        return group;
-      }));
+      console.log("[GROUP] Group being updated: ", groups[0])
+
+      setGroups(prevGroups => 
+        prevGroups.map(group => {
+          if (group._id === data.groupId) {
+            console.log("[SOCKET] Updating group:", group);
+            
+            // Full group update
+            if (data.group) {
+              return data.group
+            }
+
+            // Only last message update
+            if (data.lastMessage) {
+              return {
+                ...group,
+                lastMessage: data.lastMessage
+              };
+            }
+          }
+          return group;
+        })
+      );
+
+      // Also update selectedGroup if it's the one being updated
+      if (selectedGroup?._id === data.groupId && data.group) {
+        setSelectedGroup(data.group);
+      }
     };
 
     socket.on("groupUpdated", groupUpdateHandler);
@@ -171,10 +189,13 @@ export function MainCard({ userId }: MainCardProps) {
     },
     (removedGroupId) => {
       console.log("[SOCKET] Received removedFromGroup event:", removedGroupId);
+      // Remove the group from the list
       setGroups((prev) => prev.filter((g) => g._id !== removedGroupId));
-      setSelectedGroup((prev) =>
-        prev && prev._id === removedGroupId ? null : prev
-      );
+      // If the removed group was selected, clear the selection
+      if (selectedGroup?._id === removedGroupId) {
+        setSelectedGroup(null);
+        localStorage.removeItem("selectedGroupId");
+      }
     }
   );
 
