@@ -19,6 +19,7 @@ const io = new Server(server, {
 
 // Map userId to socket
 const userSockets = new Map();
+app.set("userSockets", userSockets);
 
 io.on("connection", (socket) => {
   // Listen for user identification

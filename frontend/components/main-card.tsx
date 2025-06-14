@@ -12,6 +12,7 @@ import { Group } from "@/models/group";
 import { Loader2 } from "lucide-react";
 import { getUserById } from "@/services/users";
 import { User } from "@/models/user";
+import { useGroupSocket } from "@/lib/use-group-socket";
 
 interface MainCardProps {
   userId: string;
@@ -78,6 +79,13 @@ export function MainCard({ userId }: MainCardProps) {
       prev ? { ...prev, messageCount: (prev.messageCount || 0) + 1 } : prev
     );
   };
+
+  useGroupSocket(userId, (newGroup) => {
+    setGroups((prev) => {
+      if (prev.some((g) => g._id === newGroup._id)) return prev;
+      return [...prev, newGroup];
+    });
+  });
 
   if (isLoading) {
     return (

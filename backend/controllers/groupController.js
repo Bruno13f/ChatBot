@@ -431,16 +431,51 @@ exports.addMemberToGroup = async (req, res) => {
     group.members.push(...newMembers);
     await group.save();
 
+    // Populate members for socket event
+    const populatedGroupForSocket = await Group.findById(groupId).populate(
+      "members",
+      "_id name profilePicture"
+    );
+    const messageCount = await Message.countDocuments({ groupId });
+    const groupForSocket = {
+      ...formatGroup(populatedGroupForSocket),
+      messageCount,
+    };
+
+    // Emit socket event to new members
+    const io = req.app.get("io");
+    const userSockets = req.app.get("userSockets");
+    if (io && userSockets && Array.isArray(newMembers)) {
+      newMembers.forEach((memberId) => {
+        const socketId = userSockets.get(memberId.toString());
+        console.log(
+          `[SOCKET] Emitindo 'addedToGroup' para userId:`,
+          memberId,
+          "socketId:",
+          socketId
+        );
+        if (socketId) {
+          io.to(socketId).emit("addedToGroup", {
+            group: groupForSocket,
+          });
+        }
+      });
+    }
+
     // Populate members for response
     const populatedGroup = await Group.findById(groupId).populate(
       "members",
       "_id name profilePicture"
     );
+    const messageCountForOwner = await Message.countDocuments({ groupId });
     console.log("✅ Users added to group successfully");
     res.json({
       success: true,
       message: "Users added to group successfully",
-      group: formatGroup(populatedGroup),
+      group: {
+        ...formatGroup(populatedGroup),
+        messageCount: messageCountForOwner,
+      },
     });
   } catch (err) {
     console.log("❌ Error adding users to group:", err);
