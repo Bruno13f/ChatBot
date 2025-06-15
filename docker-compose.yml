@@ -3,18 +3,16 @@ services:
     container_name: frontend
     build:
       context: ./frontend
+      args:
+        - BACKEND_URI=http://localhost:${BACKEND_PORT}/api
+        - SOCKET_MIDDLEWARE_URI=http://localhost:${SOCKET_MIDDLEWARE_PORT}
+        - BACKEND_SOCKET_URI=http://localhost:${BACKEND_PORT}
     ports:
       - "${FRONTEND_PORT}:${FRONTEND_PORT}"
     networks:
       - my-network
     depends_on:
       - backend
-    env_file:
-      - .env
-    environment:
-      - NEXT_PUBLIC_BACKEND_URI=http://backend:${BACKEND_PORT}/api
-      - NEXT_PUBLIC_SOCKET_WEATHER_URI=http://sockets-weather:${SOCKET_WEATHER_PORT}
-      - NEXT_PUBLIC_SOCKET_JOKES_URI=http://sockets-jokes:${SOCKET_JOKES_PORT}
 
   backend:
     container_name: backend
@@ -24,14 +22,12 @@ services:
       - "${BACKEND_PORT}:${BACKEND_PORT}"
     networks:
       - my-network
-    env_file:
-      - .env
     environment:
       - FRONTEND_URI=http://frontend:${FRONTEND_PORT}
-      - SOCKETS_JOKES_URI=http://sockets-jokes:${SOCKET_JOKES_PORT}
-      - SOCKETS_WEATHER_URI=http://sockets-weather:${SOCKET_WEATHER_PORT}
       - AZURE_TOKEN=${AZURE_TOKEN}
       - AZURE_URL=${AZURE_URL}
+      - MONGO_URI=${MONGO_URI}
+      - MONGO_LOCAL_URI=${MONGO_LOCAL_URI}
 
   sockets-middleware:
     container_name: sockets-middleware
@@ -44,8 +40,6 @@ services:
     depends_on:
       - backend
       - frontend
-    env_file:
-      - .env
     environment:
       - BACKEND_URI=http://backend:${BACKEND_PORT}/api
 
@@ -53,14 +47,10 @@ services:
     container_name: sockets-jokes
     build:
       context: ./sockets-jokes
-    ports:
-      - "${SOCKET_JOKES_PORT}:${SOCKET_JOKES_PORT}"
     networks:
       - my-network
     depends_on:
       - sockets-middleware
-    env_file:
-      - .env
     environment:
       - BACKEND_URI=http://backend:${BACKEND_PORT}/api
       - SOCKET_MIDDLEWARE_URI=http://sockets-middleware:${SOCKET_MIDDLEWARE_PORT}
@@ -69,14 +59,10 @@ services:
     container_name: sockets-weather
     build:
       context: ./sockets-weather
-    ports:
-      - "${SOCKET_WEATHER_PORT}:${SOCKET_WEATHER_PORT}"
     networks:
       - my-network
     depends_on:
       - sockets-middleware
-    env_file:
-      - .env
     environment:
       - BACKEND_URI=http://backend:${BACKEND_PORT}/api
       - SOCKET_MIDDLEWARE_URI=http://sockets-middleware:${SOCKET_MIDDLEWARE_PORT}
@@ -85,28 +71,14 @@ services:
     container_name: sockets-open-ai
     build:
       context: ./sockets-open-ai
-    ports:
-      - "${SOCKET_OPENAI_PORT}:${SOCKET_OPENAI_PORT}"
     networks:
       - my-network
     depends_on:
       - sockets-middleware
-    env_file:
-      - .env
     environment:
       - BACKEND_URI=http://backend:${BACKEND_PORT}/api
       - SOCKET_MIDDLEWARE_URI=http://sockets-middleware:${SOCKET_MIDDLEWARE_PORT}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
-
-  backup-cron:
-      build:
-        context: ./scripts
-      environment:
-        - MONGO_URI=${MONGO_URI}
-        - MONGO_BACKUP_URI=${MONGO_BACKUP_URI}
-      volumes:
-        - ./scripts/dumps:/dumps
-      restart: unless-stopped
 
 networks:
   my-network:

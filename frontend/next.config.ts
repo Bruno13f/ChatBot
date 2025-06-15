@@ -14,4 +14,8 @@ const nextConfig = {
   },
 };
 
+console.log('BACKEND URL:', process.env.NEXT_PUBLIC_BACKEND_URI);
+console.log('BACKEND_SOCKET URL:', process.env.NEXT_PUBLIC_BACKEND_SOCKET_URI);
+console.log('SOCKET_MIDDLEWARE URL:', process.env.NEXT_PUBLIC_SOCKET_MIDDLEWARE_URI);
+
 export default nextConfig;
