@@ -1,153 +1,92 @@
-name: Deploy to Kubernetes
+name: Build & Push Docker Images
 
 on:
   push:
     branches:
       - main
+    paths:
+      - "**/*.Dockerfile"
+      - "frontend/**"
+      - "backend/**"
+      - "middleware/**"
+      - "sockets-*/**"
+      - "scripts/**"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Image tag (e.g. latest, v1.0.0)'
+        required: true
+        default: 'latest'
 
 jobs:
-  build-and-deploy:
+  build-and-push:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+    - name: Checkout repo
+      uses: actions/checkout@v4
 
-      - name: Log in to Docker Hub
-        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login --username ${{ secrets.DOCKER_USERNAME }} --password-stdin
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
 
-      - name: Build and Push Frontend
-        run: |
-          docker build -f frontend/Dockerfile \
-            --build-arg BACKEND_URL=${{ vars.BACKEND_URL }} \
-            --build-arg SOCKETS_URL=${{ vars.SOCKETS_URL }} \
-            --build-arg BACKEND_PORT=${{ vars.BACKEND_PORT }} \
-            --build-arg SOCKETS_PORT=${{ vars.SOCKETS_PORT }} \
-            --build-arg IS_PRODUCTION=true \
-            -t lucasremigio/chatbot-frontend:${{ github.sha }} \
-            -t lucasremigio/chatbot-frontend:latest ./frontend
-          docker push lucasremigio/chatbot-frontend:${{ github.sha }}
-          docker push lucasremigio/chatbot-frontend:latest
+    - name: Log in to Docker Hub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKER_HUB_USERNAME }}
+        password: ${{ secrets.DOCKER_HUB_PASSWORD }}
 
-      - name: Build and Push Backend
-        run: |
-          docker build -f backend/Dockerfile \
-            -t lucasremigio/chatbot-backend:${{ github.sha }} \
-            -t lucasremigio/chatbot-backend:latest ./backend
-          docker push lucasremigio/chatbot-backend:${{ github.sha }}
-          docker push lucasremigio/chatbot-backend:latest
+    - name: Build & push frontend
+      uses: docker/build-push-action@v5
+      with:
+        context: ./frontend
+        platforms: linux/amd64
+        push: true
+        tags: docker.io/${{ env.DOCKER_HUB_USERNAME }}/projeto-cn-frontend:${{ github.sha }}
 
-      - name: Build and Push Middleware
-        run: |
-          docker build -f middleware/Dockerfile \
-            -t lucasremigio/chatbot-middleware:${{ github.sha }} \
-            -t lucasremigio/chatbot-middleware:latest ./middleware
-          docker push lucasremigio/chatbot-middleware:${{ github.sha }}
-          docker push lucasremigio/chatbot-middleware:latest
+    - name: Build & push backend
+      uses: docker/build-push-action@v5
+      with:
+        context: ./backend
+        platforms: linux/amd64
+        push: true
+        tags: docker.io/${{ env.DOCKER_HUB_USERNAME }}/projeto-cn-backend:${{ github.sha }}
 
-      - name: Build and Push Sockets Services
-        run: |
-          # Sockets Jokes
-          docker build -f sockets-jokes/Dockerfile \
-            -t lucasremigio/chatbot-sockets-jokes:${{ github.sha }} \
-            -t lucasremigio/chatbot-sockets-jokes:latest ./sockets-jokes
-          docker push lucasremigio/chatbot-sockets-jokes:${{ github.sha }}
-          docker push lucasremigio/chatbot-sockets-jokes:latest
+    - name: Build & push sockets-middleware
+      uses: docker/build-push-action@v5
+      with:
+        context: ./middleware
+        platforms: linux/amd64
+        push: true
+        tags: docker.io/${{ env.DOCKER_HUB_USERNAME }}/projeto-cn-sockets-middleware:${{ github.sha }}
 
-          # Sockets Weather
-          docker build -f sockets-weather/Dockerfile \
-            -t lucasremigio/chatbot-sockets-weather:${{ github.sha }} \
-            -t lucasremigio/chatbot-sockets-weather:latest ./sockets-weather
-          docker push lucasremigio/chatbot-sockets-weather:${{ github.sha }}
-          docker push lucasremigio/chatbot-sockets-weather:latest
+    - name: Build & push sockets-weather
+      uses: docker/build-push-action@v5
+      with:
+        context: ./sockets-weather
+        platforms: linux/amd64
+        push: true
+        tags: docker.io/${{ env.DOCKER_HUB_USERNAME }}/projeto-cn-sockets-weather:${{ github.sha }}
 
-          # Sockets OpenAI
-          docker build -f sockets-open-ai/Dockerfile \
-            -t lucasremigio/chatbot-sockets-openai:${{ github.sha }} \
-            -t lucasremigio/chatbot-sockets-openai:latest ./sockets-open-ai
-          docker push lucasremigio/chatbot-sockets-openai:${{ github.sha }}
-          docker push lucasremigio/chatbot-sockets-openai:latest
+    - name: Build & push sockets-jokes
+      uses: docker/build-push-action@v5
+      with:
+        context: ./sockets-jokes
+        platforms: linux/amd64
+        push: true
+        tags: docker.io/${{ env.DOCKER_HUB_USERNAME }}/projeto-cn-sockets-jokes:${{ github.sha }}
 
-      - name: Build and Push Backup Cron
-        run: |
-          docker build -f scripts/Dockerfile \
-            -t lucasremigio/chatbot-backup-cron:${{ github.sha }} \
-            -t lucasremigio/chatbot-backup-cron:latest ./scripts
-          docker push lucasremigio/chatbot-backup-cron:${{ github.sha }}
-          docker push lucasremigio/chatbot-backup-cron:latest
+    - name: Build & push sockets-open-ai
+      uses: docker/build-push-action@v5
+      with:
+        context: ./sockets-open-ai
+        platforms: linux/amd64
+        push: true
+        tags: docker.io/${{ env.DOCKER_HUB_USERNAME }}/projeto-cn-sockets-open-ai:${{ github.sha }}
 
-      - name: Set up kubectl
-        uses: azure/setup-kubectl@v3
-        with:
-          version: "latest"
-
-      - name: Configure kubectl
-        run: |
-          mkdir -p ~/.kube
-          echo "${{ secrets.KUBECONFIG }}" | base64 -d > ~/.kube/config
-          chmod 600 ~/.kube/config
-
-      - name: Create Kubernetes Secret
-        run: |
-          # Create/update Kubernetes Secret with sensitive data
-          kubectl create secret generic app-secrets \
-            --from-literal=MONGO_URI="${{ secrets.MONGO_URI }}" \
-            --from-literal=MONGO_BACKUP_URI="${{ secrets.MONGO_BACKUP_URI }}" \
-            --from-literal=OPENAI_API_KEY="${{ secrets.OPENAI_API_KEY }}" \
-            --from-literal=JWT_SECRET="${{ secrets.JWT_SECRET }}" \
-            --from-literal=AZURE_TOKEN="${{ secrets.AZURE_TOKEN }}" \
-            --from-literal=AZURE_URL="${{ secrets.AZURE_URL }}" \
-            --dry-run=client -o yaml | kubectl apply -f -
-
-      - name: Update image tags in deployments
-        run: |
-          # Update image tags with current commit SHA
-          find . -name "*-deployment.yaml" -exec sed -i "s|lucasremigio/chatbot-frontend:latest|lucasremigio/chatbot-frontend:${{ github.sha }}|g" {} \;
-          find . -name "*-deployment.yaml" -exec sed -i "s|lucasremigio/chatbot-backend:latest|lucasremigio/chatbot-backend:${{ github.sha }}|g" {} \;
-          find . -name "*-deployment.yaml" -exec sed -i "s|lucasremigio/chatbot-middleware:latest|lucasremigio/chatbot-middleware:${{ github.sha }}|g" {} \;
-          find . -name "*-deployment.yaml" -exec sed -i "s|lucasremigio/chatbot-sockets-jokes:latest|lucasremigio/chatbot-sockets-jokes:${{ github.sha }}|g" {} \;
-          find . -name "*-deployment.yaml" -exec sed -i "s|lucasremigio/chatbot-sockets-weather:latest|lucasremigio/chatbot-sockets-weather:${{ github.sha }}|g" {} \;
-          find . -name "*-deployment.yaml" -exec sed -i "s|lucasremigio/chatbot-sockets-openai:latest|lucasremigio/chatbot-sockets-openai:${{ github.sha }}|g" {} \;
-          find . -name "*-deployment.yaml" -exec sed -i "s|lucasremigio/chatbot-backup-cron:latest|lucasremigio/chatbot-backup-cron:${{ github.sha }}|g" {} \;
-
-      - name: Deploy to Kubernetes
-        run: |
-          # Apply ConfigMap first
-          kubectl apply -f env-configmap.yaml
-
-          # Apply all deployments and services
-          kubectl apply -f backend/backend-deployment.yaml
-          kubectl apply -f backend/backend-service.yaml
-
-          kubectl apply -f frontend/frontend-deployment.yaml
-          kubectl apply -f frontend/frontend-service.yaml
-
-          kubectl apply -f middleware/sockets-middleware-deployment.yaml
-          kubectl apply -f middleware/sockets-middleware-service.yaml
-
-          kubectl apply -f sockets-jokes/sockets-jokes-deployment.yaml
-          kubectl apply -f sockets-jokes/sockets-jokes-service.yaml
-
-          kubectl apply -f sockets-weather/sockets-weather-deployment.yaml
-          kubectl apply -f sockets-weather/sockets-weather-service.yaml
-
-          kubectl apply -f sockets-open-ai/sockets-open-ai-deployment.yaml
-          kubectl apply -f sockets-open-ai/sockets-open-ai-service.yaml
-
-          # Apply backup cron job
-          kubectl apply -f scripts/backup-cron-cm0-configmap.yaml
-          kubectl apply -f scripts/backup-cron-deployment.yaml
-
-      - name: Wait for deployments to be ready
-        run: |
-          kubectl rollout status deployment/backend
-          kubectl rollout status deployment/frontend
-          kubectl rollout status deployment/sockets-middleware
-          kubectl rollout status deployment/sockets-jokes
-          kubectl rollout status deployment/sockets-weather
-          kubectl rollout status deployment/sockets-open-ai
-
-      - name: Verify deployment
-        run: |
-          kubectl get pods
-          kubectl get services
-          kubectl get deployments
+    - name: Build & push backup-cron
+      uses: docker/build-push-action@v5
+      with:
+        context: ./scripts
+        platforms: linux/amd64
+        push: true
+        tags: docker.io/${{ env.DOCKER_HUB_USERNAME }}/projeto-cn-backup-cron:${{ github.sha }}
