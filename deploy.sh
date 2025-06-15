@@ -2,14 +2,15 @@
 
 set -e  # Exit on any error
 
-echo "🧹 Cleaning up existing minikube setup..."
-minikube delete --all
-
 echo "🚀 Starting projeto-cn deployment..."
 
-# Start minikube
-echo "📦 Starting minikube..."
-minikube start
+# Check if minikube is running, start if not
+if ! minikube status > /dev/null 2>&1; then
+  echo "📦 Starting minikube..."
+  minikube start
+else
+  echo "📦 Minikube is already running"
+fi
 
 # Build all Docker images
 echo "🏗️  Building Docker images..."
@@ -42,20 +43,42 @@ kubectl apply -f sockets-jokes/sockets-jokes-deployment.yaml
 kubectl apply -f sockets-weather/sockets-weather-deployment.yaml
 kubectl apply -f sockets-open-ai/sockets-open-ai-deployment.yaml
 
-# Enable ingress and apply ingress configuration
+# Force rolling restart of all deployments to use new images
+echo "🔄 Rolling out updates..."
+kubectl rollout restart deployment/frontend
+kubectl rollout restart deployment/backend
+kubectl rollout restart deployment/sockets-middleware
+kubectl rollout restart deployment/sockets-jokes
+kubectl rollout restart deployment/sockets-weather
+kubectl rollout restart deployment/sockets-open-ai
+
+# Wait for rollouts to complete
+echo "⏳ Waiting for rollouts to complete..."
+kubectl rollout status deployment/frontend
+kubectl rollout status deployment/backend
+kubectl rollout status deployment/sockets-middleware
+kubectl rollout status deployment/sockets-jokes
+kubectl rollout status deployment/sockets-weather
+kubectl rollout status deployment/sockets-open-ai
+
+# Enable ingress if not already enabled
 echo "🌐 Setting up ingress..."
-minikube addons enable ingress
-
-# Wait for ingress controller pods to be ready
-echo "⏳ Waiting for ingress controller to be ready..."
-kubectl wait --namespace ingress-nginx \
-  --for=condition=ready pod \
-  --selector=app.kubernetes.io/component=controller \
-  --timeout=300s
-
-# Wait a bit more for the webhook service to be fully ready
-echo "⏳ Waiting for webhook service to be ready..."
-sleep 2
+if ! minikube addons list | grep ingress | grep enabled > /dev/null; then
+  minikube addons enable ingress
+  
+  # Wait for ingress controller pods to be ready
+  echo "⏳ Waiting for ingress controller to be ready..."
+  kubectl wait --namespace ingress-nginx \
+    --for=condition=ready pod \
+    --selector=app.kubernetes.io/component=controller \
+    --timeout=300s
+  
+  # Wait a bit more for the webhook service to be fully ready
+  echo "⏳ Waiting for webhook service to be ready..."
+  sleep 2
+else
+  echo "🌐 Ingress already enabled"
+fi
 
 # Apply ingress configuration
 echo "🔧 Applying ingress configuration..."

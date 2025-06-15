@@ -248,13 +248,17 @@ const saveMessageToAPI = async (
   groupId: string,
   token: string
 ) => {
-  const backendUrl = process.env.BACKEND_URI || "http://localhost:8000";
+  const backendUrl = process.env.BACKEND_URI || "http://localhost:9000";
+  const backendPort = process.env.BACKEND_PORT || "9000";
 
-  console.log(
-    `Saving message to API at ${backendUrl}/groups/${groupId}/messages`
-  );
+  // If backendUrl is a relative path (starts with /), make it absolute
+  const fullUrl = backendUrl.startsWith("/")
+    ? `http://backend:${backendPort}${backendUrl}`
+    : backendUrl;
 
-  const res = await fetch(`${backendUrl}/groups/${groupId}/messages`, {
+  console.log(`Saving message to API at ${fullUrl}/groups/${groupId}/messages`);
+
+  const res = await fetch(`${fullUrl}/groups/${groupId}/messages`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

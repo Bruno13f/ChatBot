@@ -9,7 +9,11 @@ data:
   SOCKET_MIDDLEWARE_PORT: "8000"
   SOCKET_OPENAI_PORT: "4002"
   SOCKET_WEATHER_PORT: "4001"
+  SOCKET_MIDDLEWARE_URI: /sockets-middleware
+  AZURE_TOKEN: key
+  AZURE_URL: key
   OPENAI_API_KEY: key
+  NODEGEOCODER_API_KEY: key
 metadata:
   labels:
     io.kompose.service: backend-env
