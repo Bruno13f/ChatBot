@@ -7,7 +7,6 @@ minikube image build -t projeto-cn-sockets-weather:latest ./sockets-weather
 minikube image build -t projeto-cn-sockets-jokes:latest ./sockets-jokes
 minikube image build -t projeto-cn-sockets-open-ai:latest ./sockets-open-ai
 
-kubectl apply -f secrets.yaml
 kubectl apply -f configmap.yaml
 
 kubectl apply -f frontend/frontend-service.yaml

@@ -8,6 +8,7 @@ export const initMiddlewareSocket = (onMessage: (message: any) => void): Socket 
     const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_MIDDLEWARE_URI || 'http://localhost:8000';
 
     socketInstance = io(SOCKET_URL, {
+      path: '/sockets-middleware',
       reconnectionDelayMax: 10000,
     });
 
