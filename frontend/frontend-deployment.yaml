@@ -4,9 +4,10 @@ metadata:
   annotations:
     kompose.cmd: kompose --file docker-compose.yml convert
     kompose.version: 1.36.0 (HEAD)
-    keel.sh/policy: "force"
+    keel.sh/policy: "all"
     keel.sh/trigger: "poll"
     keel.sh/pollSchedule: "@every 30s"
+    keel.sh/match-tag: "true"
   labels:
     io.kompose.service: frontend
   name: frontend
