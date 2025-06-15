@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mongodb-backup-statefulset
+  labels:
+    app.kubernetes.io/name: mongodb-backup-statefulset
+spec:
+  serviceName: mongodb-backup
+  selector:
+    matchLabels:
+      app: mongodb-backup
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: mongodb-backup
+    spec:
+      volumes:
+        - name: mongodb-backup-pv-volume
+          persistentVolumeClaim:
+            claimName: mongodb-backup-pvc
+      containers:
+        - name: mongodb-backup
+          image: mongo:7.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 27017
+          env:
+            - name: MONGO_INITDB_ROOT_USERNAME
+              value: "backup-admin"
+            - name: MONGO_INITDB_ROOT_PASSWORD
+              value: "backup-password123"
+            - name: MONGO_INITDB_DATABASE
+              value: "chatbot-backup"
+          volumeMounts:
+            - name: mongodb-backup-pv-volume
+              mountPath: /data/db
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
+      initContainers:
+        - name: backup-init
+          image: busybox:latest
+          command:
+            - chmod
+            - -R
+            - "777"
+            - /data/db
+          volumeMounts:
+            - name: mongodb-backup-pv-volume
+              mountPath: /data/db

@@ -96,9 +96,19 @@ kubectl apply -f mongodb/mongodb-pvc.yaml
 kubectl apply -f mongodb/mongodb-service.yaml
 kubectl apply -f mongodb/mongodb-deployment.yaml
 
+# Apply MongoDB Backup storage and database
+echo "🗄️  Deploying MongoDB Backup..."
+kubectl apply -f mongodb_backup/mongodb-pvc.yaml
+kubectl apply -f mongodb_backup/mongodb-service.yaml
+kubectl apply -f mongodb_backup/mongodb-deployment.yaml
+
 # Wait for MongoDB to be ready
 echo "⏳ Waiting for MongoDB to be ready..."
 kubectl wait --for=condition=ready pod -l app=mongodb --timeout=300s
+
+# Wait for MongoDB Backup to be ready
+echo "⏳ Waiting for MongoDB Backup to be ready..."
+kubectl wait --for=condition=ready pod -l app=mongodb-backup --timeout=300s
 
 # Apply all services
 echo "🔗 Deploying services..."

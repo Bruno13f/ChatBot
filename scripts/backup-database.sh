@@ -2,8 +2,8 @@
 set -euo pipefail
 
 # Read URIs from environment variables
-SOURCE_URI="${MONGO_URI:-}"
-DEST_URI="${MONGO_BACKUP_URI:-}"
+SOURCE_URI="${MONGO_LOCAL_URI:-}"
+DEST_URI="${MONGO_LOCAL_BACKUP_URI:-}"
 
 # Validate required environment variables
 if [[ -z "$SOURCE_URI" ]]; then
