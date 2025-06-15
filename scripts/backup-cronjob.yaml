@@ -1,0 +1,21 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: backup-cronjob
+spec:
+  # Run every day at 2:00 AM
+  schedule: "0 2 * * *"
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: backup-cron
+              image: lucasremigio/chatbot-backup-cron:latest
+              imagePullPolicy: Never
+              envFrom:
+                - configMapRef:
+                    name: env-configmap
+          restartPolicy: OnFailure

@@ -11,6 +11,8 @@ data:
   AZURE_URL: key
   OPENAI_API_KEY: key
   NODEGEOCODER_API_KEY: key
+  MONGO_URI: uri
+  MONGO_BACKUP_URI: uri
 metadata:
   labels:
     io.kompose.service: backend-env

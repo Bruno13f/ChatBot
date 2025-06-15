@@ -20,6 +20,7 @@ minikube image build -t projeto-cn-sockets-middleware:latest ./middleware
 minikube image build -t projeto-cn-sockets-weather:latest ./sockets-weather
 minikube image build -t projeto-cn-sockets-jokes:latest ./sockets-jokes
 minikube image build -t projeto-cn-sockets-open-ai:latest ./sockets-open-ai
+minikube image build -t lucasremigio/chatbot-backup-cron:latest ./scripts
 
 # Apply ConfigMap
 echo "⚙️  Applying ConfigMap..."
@@ -42,6 +43,10 @@ kubectl apply -f middleware/sockets-middleware-deployment.yaml
 kubectl apply -f sockets-jokes/sockets-jokes-deployment.yaml
 kubectl apply -f sockets-weather/sockets-weather-deployment.yaml
 kubectl apply -f sockets-open-ai/sockets-open-ai-deployment.yaml
+
+# Apply backup CronJob
+echo "⏰ Deploying backup CronJob..."
+kubectl apply -f scripts/backup-cronjob.yaml
 
 # Force rolling restart of all deployments to use new images
 echo "🔄 Rolling out updates..."
