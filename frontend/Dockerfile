@@ -16,21 +16,13 @@ ARG BACKEND_URI
 ARG SOCKET_MIDDLEWARE_URI
 ARG BACKEND_SOCKET_URI
 
-# Create a clean .env file with ONLY the provided arguments
-RUN rm -f .env .env.local .env.production .env.production.local && \
-    echo "# Generated environment file" > .env && \
-    if [ ! -z "$BACKEND_URI" ]; then \
-      echo "NEXT_PUBLIC_BACKEND_URI=${BACKEND_URI}" >> .env; \
-    fi && \
-    if [ ! -z "$SOCKET_MIDDLEWARE_URI" ]; then \
-      echo "NEXT_PUBLIC_SOCKET_MIDDLEWARE_URI=${SOCKET_MIDDLEWARE_URI}" >> .env; \
-    fi && \
-    if [ ! -z "$BACKEND_SOCKET_URI" ]; then \
-      echo "NEXT_PUBLIC_BACKEND_SOCKET_URI=${BACKEND_SOCKET_URI}" >> .env; \
+# Remove production env file and create clean one if args provided
+RUN if [ ! -z "$BACKEND_URI" ] || [ ! -z "$SOCKET_MIDDLEWARE_URI" ] || [ ! -z "$BACKEND_SOCKET_URI" ]; then \
+      rm -f .env.production.local && \
+      echo "NEXT_PUBLIC_BACKEND_URI=${BACKEND_URI}" > .env.production.local && \
+      echo "NEXT_PUBLIC_SOCKET_MIDDLEWARE_URI=${SOCKET_MIDDLEWARE_URI}" >> .env.production.local && \
+      echo "NEXT_PUBLIC_BACKEND_SOCKET_URI=${BACKEND_SOCKET_URI}" >> .env.production.local; \
     fi
-
-# Show final env for debugging
-RUN echo "Clean .env contents:" && cat .env
 
 RUN pnpm build
 
@@ -49,7 +41,6 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/next.config.ts ./
-COPY --from=builder /app/.env .env
 
 EXPOSE 3000
 
