@@ -1,22 +1,27 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
-  name: mongodb
+  name: mongodb-statefulset
   labels:
-    app: mongodb
+    app.kubernetes.io/name: mongodb-statefulset
 spec:
-  replicas: 1
   selector:
     matchLabels:
       app: mongodb
+  replicas: 1
   template:
     metadata:
       labels:
         app: mongodb
     spec:
+      volumes:
+        - name: mongodb-pv-volume
+          persistentVolumeClaim:
+            claimName: mongodb-pvc
       containers:
         - name: mongodb
           image: mongo:7.0
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 27017
           env:
@@ -27,7 +32,7 @@ spec:
             - name: MONGO_INITDB_DATABASE
               value: "chatbot"
           volumeMounts:
-            - name: mongodb-storage
+            - name: mongodb-pv-volume
               mountPath: /data/db
           resources:
             requests:
@@ -36,7 +41,14 @@ spec:
             limits:
               memory: "1Gi"
               cpu: "500m"
-      volumes:
-        - name: mongodb-storage
-          persistentVolumeClaim:
-            claimName: mongodb-pvc
+      initContainers:
+        - name: install
+          image: busybox:latest
+          command:
+            - chmod
+            - -R
+            - "777"
+            - /data/db
+          volumeMounts:
+            - name: mongodb-pv-volume
+              mountPath: /data/db

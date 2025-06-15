@@ -65,14 +65,7 @@ kubectl apply -f mongodb/mongodb-deployment.yaml
 
 # Wait for MongoDB to be ready
 echo "⏳ Waiting for MongoDB to be ready..."
-if ! kubectl wait --for=condition=ready pod -l app=mongodb --timeout=300s; then
-  echo "❌ MongoDB failed to become ready in time"
-  echo "📋 Checking MongoDB pod status..."
-  kubectl get pods -l app=mongodb
-  kubectl describe pods -l app=mongodb
-  exit 1
-fi
-echo "✅ MongoDB is ready!"
+kubectl wait --for=condition=ready pod -l app=mongodb --timeout=300s
 
 # Apply all services
 echo "🔗 Deploying services..."
