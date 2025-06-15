@@ -2,6 +2,9 @@
 
 set -e  # Exit on any error
 
+echo "🧹 Cleaning up existing minikube setup..."
+minikube delete --all
+
 echo "🚀 Starting projeto-cn deployment..."
 
 # Start minikube
@@ -42,6 +45,20 @@ kubectl apply -f sockets-open-ai/sockets-open-ai-deployment.yaml
 # Enable ingress and apply ingress configuration
 echo "🌐 Setting up ingress..."
 minikube addons enable ingress
+
+# Wait for ingress controller pods to be ready
+echo "⏳ Waiting for ingress controller to be ready..."
+kubectl wait --namespace ingress-nginx \
+  --for=condition=ready pod \
+  --selector=app.kubernetes.io/component=controller \
+  --timeout=300s
+
+# Wait a bit more for the webhook service to be fully ready
+echo "⏳ Waiting for webhook service to be ready..."
+sleep 2
+
+# Apply ingress configuration
+echo "🔧 Applying ingress configuration..."
 kubectl apply -f ingress.yaml
 
 echo "✅ Deployment complete!"
