@@ -43,6 +43,8 @@ jobs:
           push: true
           tags: |
             docker.io/${{ secrets.DOCKER_HUB_USERNAME }}/projeto-cn-frontend:latest
+          cache-from: type=registry,ref=${{ secrets.DOCKER_HUB_USERNAME }}/projeto-cn-frontend:buildcache
+          cache-to: type=registry,ref=${{ secrets.DOCKER_HUB_USERNAME }}/projeto-cn-frontend:buildcache,mode=max
 
       - name: Build & push backend
         uses: docker/build-push-action@v5
@@ -52,6 +54,8 @@ jobs:
           push: true
           tags: |
             docker.io/${{ secrets.DOCKER_HUB_USERNAME }}/projeto-cn-backend:latest
+          cache-from: type=registry,ref=${{ secrets.DOCKER_HUB_USERNAME }}/projeto-cn-backend:buildcache
+          cache-to: type=registry,ref=${{ secrets.DOCKER_HUB_USERNAME }}/projeto-cn-backend:buildcache,mode=max
 
       - name: Build & push sockets-middleware
         uses: docker/build-push-action@v5
@@ -61,6 +65,8 @@ jobs:
           push: true
           tags: |
             docker.io/${{ secrets.DOCKER_HUB_USERNAME }}/projeto-cn-sockets-middleware:latest
+          cache-from: type=registry,ref=${{ secrets.DOCKER_HUB_USERNAME }}/projeto-cn-sockets-middleware:buildcache
+          cache-to: type=registry,ref=${{ secrets.DOCKER_HUB_USERNAME }}/projeto-cn-sockets-middleware:buildcache,mode=max
 
       - name: Build & push sockets-weather
         uses: docker/build-push-action@v5
@@ -70,6 +76,8 @@ jobs:
           push: true
           tags: |
             docker.io/${{ secrets.DOCKER_HUB_USERNAME }}/projeto-cn-sockets-weather:latest
+          cache-from: type=registry,ref=${{ secrets.DOCKER_HUB_USERNAME }}/projeto-cn-sockets-weather:buildcache
+          cache-to: type=registry,ref=${{ secrets.DOCKER_HUB_USERNAME }}/projeto-cn-sockets-weather:buildcache,mode=max
 
       - name: Build & push sockets-jokes
         uses: docker/build-push-action@v5
@@ -79,6 +87,8 @@ jobs:
           push: true
           tags: |
             docker.io/${{ secrets.DOCKER_HUB_USERNAME }}/projeto-cn-sockets-jokes:latest
+          cache-from: type=registry,ref=${{ secrets.DOCKER_HUB_USERNAME }}/projeto-cn-sockets-jokes:buildcache
+          cache-to: type=registry,ref=${{ secrets.DOCKER_HUB_USERNAME }}/projeto-cn-sockets-jokes:buildcache,mode=max
 
       - name: Build & push sockets-open-ai
         uses: docker/build-push-action@v5
@@ -88,6 +98,8 @@ jobs:
           push: true
           tags: |
             docker.io/${{ secrets.DOCKER_HUB_USERNAME }}/projeto-cn-sockets-open-ai:latest
+          cache-from: type=registry,ref=${{ secrets.DOCKER_HUB_USERNAME }}/projeto-cn-sockets-open-ai:buildcache
+          cache-to: type=registry,ref=${{ secrets.DOCKER_HUB_USERNAME }}/projeto-cn-sockets-open-ai:buildcache,mode=max
 
       - name: Build & push backup-cron
         uses: docker/build-push-action@v5
@@ -97,3 +109,5 @@ jobs:
           push: true
           tags: |
             docker.io/${{ secrets.DOCKER_HUB_USERNAME }}/projeto-cn-backup-cron:latest
+          cache-from: type=registry,ref=${{ secrets.DOCKER_HUB_USERNAME }}/projeto-cn-backup-cron:buildcache
+          cache-to: type=registry,ref=${{ secrets.DOCKER_HUB_USERNAME }}/projeto-cn-backup-cron:buildcache,mode=max
