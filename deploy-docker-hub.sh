@@ -2,51 +2,78 @@
 
 set -e  # Exit on any error
 
-echo "🚀 Starting Docker Hub build and push..."
+# Parse command line arguments
+IMAGE_TAG=${1:-latest}
+BUILD_IMAGES=${2:-true}
+SERVICES_TO_UPDATE=${3:-"all"}
 
 # Docker Hub username
 DOCKER_USERNAME="lucasestgipleiria"
 
-# Build and push all Docker images to Docker Hub
-echo "🏗️  Building and pushing Docker images to Docker Hub..."
+echo "🚀 Starting Docker Hub build and push with tag: ${IMAGE_TAG}..."
 
-echo "📦 Building and pushing frontend..."
-docker build -t ${DOCKER_USERNAME}/projeto-cn-frontend:latest ./frontend
-docker push ${DOCKER_USERNAME}/projeto-cn-frontend:latest
+# Get Docker command path
+DOCKER_CMD=$(which docker)
+if [[ -z "$DOCKER_CMD" ]]; then
+  echo "❌ Docker not found in PATH"
+  exit 1
+fi
 
-echo "📦 Building and pushing backend..."
-docker build -t ${DOCKER_USERNAME}/projeto-cn-backend:latest ./backend
-docker push ${DOCKER_USERNAME}/projeto-cn-backend:latest
+# Function to build and push a single image
+build_and_push() {
+  local service=$1
+  local context=$2
+  local image_name="docker.io/${DOCKER_USERNAME}/projeto-cn-${service}:${IMAGE_TAG}"
+  
+  echo "📦 Building and pushing ${service}:${IMAGE_TAG}..."
+  cd ${context}
+  $DOCKER_CMD buildx build \
+    --platform linux/amd64 \
+    -t ${image_name} \
+    --push \
+    .
+  cd - > /dev/null
+  echo "✅ ${service}:${IMAGE_TAG} build and push completed"
+}
 
-echo "📦 Building and pushing middleware..."
-docker build -t ${DOCKER_USERNAME}/projeto-cn-sockets-middleware:latest ./middleware
-docker push ${DOCKER_USERNAME}/projeto-cn-sockets-middleware:latest
+# Function to update specific deployment
+update_deployment() {
+  local service=$1
+  local image_name="docker.io/${DOCKER_USERNAME}/projeto-cn-${service}:${IMAGE_TAG}"
+  
+  echo "🔄 Updating ${service} deployment with ${image_name}..."
+  kubectl set image deployment/${service} ${service}=${image_name}
+  kubectl rollout status deployment/${service}
+  echo "✅ ${service} updated successfully"
+}
 
-echo "📦 Building and pushing weather service..."
-docker build -t ${DOCKER_USERNAME}/projeto-cn-sockets-weather:latest ./sockets-weather
-docker push ${DOCKER_USERNAME}/projeto-cn-sockets-weather:latest
+if [[ "$BUILD_IMAGES" != "skip-build" ]]; then
+  echo "🏗️  Building and pushing Docker images to Docker Hub in parallel..."
 
-echo "📦 Building and pushing jokes service..."
-docker build -t ${DOCKER_USERNAME}/projeto-cn-sockets-jokes:latest ./sockets-jokes
-docker push ${DOCKER_USERNAME}/projeto-cn-sockets-jokes:latest
+  # Build all images in parallel with Linux/AMD64 platform
+  build_and_push "frontend" "./frontend" &
+  build_and_push "backend" "./backend" &
+  build_and_push "sockets-middleware" "./middleware" &
+  build_and_push "sockets-weather" "./sockets-weather" &
+  build_and_push "sockets-jokes" "./sockets-jokes" &
+  build_and_push "sockets-open-ai" "./sockets-open-ai" &
+  build_and_push "backup-cron" "./scripts" &
 
-echo "📦 Building and pushing openai service..."
-docker build -t ${DOCKER_USERNAME}/projeto-cn-sockets-open-ai:latest ./sockets-open-ai
-docker push ${DOCKER_USERNAME}/projeto-cn-sockets-open-ai:latest
+  echo "⏳ Waiting for all builds to complete..."
+  wait
 
-echo "📦 Building and pushing backup cron..."
-docker build -t ${DOCKER_USERNAME}/projeto-cn-backup-cron:latest ./scripts
-docker push ${DOCKER_USERNAME}/projeto-cn-backup-cron:latest
-
-echo "✅ All images built and pushed to Docker Hub successfully!"
-echo "🐳 Images available at:"
-echo "   - ${DOCKER_USERNAME}/projeto-cn-frontend:latest"
-echo "   - ${DOCKER_USERNAME}/projeto-cn-backend:latest"
-echo "   - ${DOCKER_USERNAME}/projeto-cn-sockets-middleware:latest"
-echo "   - ${DOCKER_USERNAME}/projeto-cn-sockets-weather:latest"
-echo "   - ${DOCKER_USERNAME}/projeto-cn-sockets-jokes:latest"
-echo "   - ${DOCKER_USERNAME}/projeto-cn-sockets-open-ai:latest"
-echo "   - ${DOCKER_USERNAME}/projeto-cn-backup-cron:latest"
+  echo "✅ All images built and pushed to Docker Hub successfully!"
+  echo "🐳 Images available at:"
+  echo "   - ${DOCKER_USERNAME}/projeto-cn-frontend:${IMAGE_TAG}"
+  echo "   - ${DOCKER_USERNAME}/projeto-cn-backend:${IMAGE_TAG}"
+  echo "   - ${DOCKER_USERNAME}/projeto-cn-sockets-middleware:${IMAGE_TAG}"
+  echo "   - ${DOCKER_USERNAME}/projeto-cn-sockets-weather:${IMAGE_TAG}"
+  echo "   - ${DOCKER_USERNAME}/projeto-cn-sockets-jokes:${IMAGE_TAG}"
+  echo "   - ${DOCKER_USERNAME}/projeto-cn-sockets-open-ai:${IMAGE_TAG}"
+  echo "   - ${DOCKER_USERNAME}/projeto-cn-backup-cron:${IMAGE_TAG}"
+else
+  echo "⏭️  Skipping image build, using existing images with tag: ${IMAGE_TAG}"
+fi
 
 echo ""
 echo "🚀 Now deploying to Kubernetes..."
@@ -85,14 +112,25 @@ kubectl apply -f sockets-open-ai/sockets-open-ai-deployment.yaml
 echo "⏰ Deploying backup CronJob..."
 kubectl apply -f scripts/backup-cronjob.yaml
 
-# Force rolling restart of all deployments to use new images
-echo "🔄 Rolling out updates..."
-kubectl rollout restart deployment/frontend
-kubectl rollout restart deployment/backend
-kubectl rollout restart deployment/sockets-middleware
-kubectl rollout restart deployment/sockets-jokes
-kubectl rollout restart deployment/sockets-weather
-kubectl rollout restart deployment/sockets-open-ai
+# Update deployments with new images
+if [[ "$SERVICES_TO_UPDATE" == "all" ]]; then
+  echo "🔄 Updating all deployments with tag: ${IMAGE_TAG}..."
+  update_deployment "frontend"
+  update_deployment "backend"
+  update_deployment "sockets-middleware"
+  update_deployment "sockets-jokes"
+  update_deployment "sockets-weather"
+  update_deployment "sockets-open-ai"
+else
+  echo "🔄 Updating specific services: ${SERVICES_TO_UPDATE} with tag: ${IMAGE_TAG}..."
+  for service in ${(s:,:)SERVICES_TO_UPDATE}; do
+    update_deployment "$service"
+  done
+fi
+
+# Update backup CronJob separately
+echo "⏰ Updating backup CronJob..."
+kubectl patch cronjob backup-cronjob -p "{\"spec\":{\"jobTemplate\":{\"spec\":{\"template\":{\"spec\":{\"containers\":[{\"name\":\"backup-cron\",\"image\":\"docker.io/${DOCKER_USERNAME}/projeto-cn-backup-cron:${IMAGE_TAG}\"}]}}}}}}"
 
 # Enable ingress if not already enabled
 echo "🌐 Setting up ingress..."
@@ -117,7 +155,14 @@ fi
 echo "🔧 Applying ingress configuration..."
 kubectl apply -f ingress.yaml
 
-echo "✅ Complete! Images pushed to Docker Hub and deployed to Kubernetes!"
+echo "✅ Complete! Images pushed to Docker Hub and deployed to Kubernetes with tag: ${IMAGE_TAG}!"
+echo ""
+echo "📋 Usage examples:"
+echo "   ./deploy-docker-hub.sh                    # Deploy with latest tag"
+echo "   ./deploy-docker-hub.sh v1.2.0             # Deploy with specific tag"
+echo "   ./deploy-docker-hub.sh v1.2.0 skip-build  # Update deployments without building"
+echo "   ./deploy-docker-hub.sh latest true frontend,backend  # Update only specific services"
+echo ""
 echo "🔧 Starting minikube tunnel (this will run in foreground)..."
 echo "💡 Press Ctrl+C to stop the tunnel when done"
 minikube tunnel

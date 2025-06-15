@@ -12,7 +12,7 @@ metadata:
     nginx.ingress.kubernetes.io/proxy-body-size: "50m"
 spec:
   rules:
-    - host: guerra-127.0.0.1.sslip.io
+    - host: chatbotg6-172.22.21.101.sslip.io
       http:
         paths:
           - pathType: ImplementationSpecific
