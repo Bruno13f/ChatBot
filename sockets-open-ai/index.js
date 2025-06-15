@@ -2,10 +2,20 @@ require("dotenv").config();
 const { io } = require("socket.io-client");
 const OpenAI = require("openai");
 
+const backendPort = process.env.BACKEND_PORT || "9000";
+const backendUrl = process.env.BACKEND_URI.startsWith("/")
+  ? `http://backend:${backendPort}${process.env.BACKEND_URI}`
+  : process.env.BACKEND_URI;
+
+const middlewarePort = process.env.SOCKET_MIDDLEWARE_PORT || "8000";
+const middlewareUri = process.env.SOCKET_MIDDLEWARE_URI.startsWith("/")
+  ? `http://sockets-middleware:${middlewarePort}`
+  : process.env.SOCKET_MIDDLEWARE_URI;
+
 // Configuration
 const CONFIG = {
-  middlewareUri: process.env.SOCKET_MIDDLEWARE_URI || "http://localhost:8000",
-  backendUri: process.env.BACKEND_URI || "http://localhost:8000",
+  middlewareUri: middlewareUri,
+  backendUri: backendUrl,
   command: "!openai",
   model: "gpt-3.5-turbo",
   openAiKey: process.env.OPENAI_API_KEY,
@@ -65,7 +75,10 @@ const openai = new OpenAI({
 });
 
 // Initialize socket connection
-const socket = io(CONFIG.middlewareUri);
+const socket = io(CONFIG.middlewareUri, {
+  path: "/sockets-middleware/socket.io",
+  reconnectionDelayMax: 10000,
+});
 
 // Socket event handlers
 const setupSocketHandlers = () => {
@@ -81,6 +94,10 @@ const setupSocketHandlers = () => {
 
   socket.on("disconnect", () => {
     console.log("Disconnected from middleware");
+  });
+
+  socket.on("connect_error", (error) => {
+    console.log("Connection failed, retrying...", error.message);
   });
 
   socket.on("process_command", handleCommand);

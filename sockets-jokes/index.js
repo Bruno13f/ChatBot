@@ -1,10 +1,20 @@
 require("dotenv").config();
 const { io } = require("socket.io-client");
 
+const backendPort = process.env.BACKEND_PORT || "9000";
+const backendUrl = process.env.BACKEND_URI.startsWith("/")
+  ? `http://backend:${backendPort}${process.env.BACKEND_URI}`
+  : process.env.BACKEND_URI;
+
+const middlewarePort = process.env.SOCKET_MIDDLEWARE_PORT || "8000";
+const middlewareUri = process.env.SOCKET_MIDDLEWARE_URI.startsWith("/")
+  ? `http://sockets-middleware:${middlewarePort}`
+  : process.env.SOCKET_MIDDLEWARE_URI;
+
 // Configuration
 const CONFIG = {
-  middlewareUri: process.env.SOCKET_MIDDLEWARE_URI || "http://localhost:8000",
-  backendUri: process.env.BACKEND_URI || "http://localhost:8000",
+  middlewareUri: middlewareUri,
+  backendUri: backendUrl,
   command: "!joke",
   validCategories: [
     "programming",
@@ -43,7 +53,10 @@ console.log(
 );
 
 // Initialize socket connection
-const socket = io(CONFIG.middlewareUri);
+const socket = io(CONFIG.middlewareUri, {
+  path: "/sockets-middleware/socket.io",
+  reconnectionDelayMax: 10000,
+});
 
 // Command help information
 const commandHelp = {
@@ -69,6 +82,10 @@ const setupSocketHandlers = () => {
 
   socket.on("disconnect", () => {
     console.log("Disconnected from middleware");
+  });
+
+  socket.on("connect_error", (error) => {
+    console.log("Connection failed, retrying...", error.message);
   });
 
   // Listen for command processing requests from the middleware
@@ -157,8 +174,7 @@ const setupSocketHandlers = () => {
 };
 
 const saveJokeToAPI = async (joke, groupId, token, isJoke) => {
-  const backendUrl = process.env.BACKEND_URI || "http://localhost:8000";
-  const res = await fetch(`${backendUrl}/groups/${groupId}/messages`, {
+  const res = await fetch(`${CONFIG.backendUri}/groups/${groupId}/messages`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
