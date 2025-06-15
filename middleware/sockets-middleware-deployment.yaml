@@ -22,8 +22,8 @@ spec:
     spec:
       containers:
         - name: sockets-middleware
-          image: projeto-cn-sockets-middleware:latest
-          imagePullPolicy: Never
+          image: docker.io/lucasestgipleiria/projeto-cn-sockets-middleware:latest
+          imagePullPolicy: IfNotPresent
           envFrom:
             - configMapRef:
                 name: env-configmap

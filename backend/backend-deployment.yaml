@@ -22,8 +22,8 @@ spec:
     spec:
       containers:
         - name: backend
-          image: projeto-cn-backend:latest
-          imagePullPolicy: Never
+          image: docker.io/lucasestgipleiria/projeto-cn-backend:latest
+          imagePullPolicy: IfNotPresent
           envFrom:
             - configMapRef:
                 name: env-configmap

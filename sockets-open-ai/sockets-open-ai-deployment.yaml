@@ -22,8 +22,8 @@ spec:
     spec:
       containers:
         - name: sockets-open-ai
-          image: projeto-cn-sockets-open-ai:latest
-          imagePullPolicy: Never
+          image: docker.io/lucasestgipleiria/projeto-cn-sockets-open-ai:latest
+          imagePullPolicy: IfNotPresent
           envFrom:
             - configMapRef:
                 name: env-configmap

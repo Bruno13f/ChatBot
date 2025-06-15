@@ -22,8 +22,8 @@ spec:
     spec:
       containers:
         - name: sockets-weather
-          image: projeto-cn-sockets-weather:latest
-          imagePullPolicy: Never
+          image: docker.io/lucasestgipleiria/projeto-cn-sockets-weather:latest
+          imagePullPolicy: IfNotPresent
           envFrom:
             - configMapRef:
                 name: env-configmap

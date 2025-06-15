@@ -13,8 +13,8 @@ spec:
         spec:
           containers:
             - name: backup-cron
-              image: projeto-cn-backup-cron:latest
-              imagePullPolicy: Never
+              image: docker.io/lucasestgipleiria/projeto-cn-backup-cron:latest
+              imagePullPolicy: IfNotPresent
               envFrom:
                 - configMapRef:
                     name: env-configmap
