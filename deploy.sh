@@ -57,14 +57,6 @@ kubectl rollout restart deployment/sockets-jokes
 kubectl rollout restart deployment/sockets-weather
 kubectl rollout restart deployment/sockets-open-ai
 
-# Wait for rollouts to complete
-echo "⏳ Waiting for rollouts to complete..."
-kubectl rollout status deployment/frontend
-kubectl rollout status deployment/backend
-kubectl rollout status deployment/sockets-middleware
-kubectl rollout status deployment/sockets-jokes
-kubectl rollout status deployment/sockets-weather
-kubectl rollout status deployment/sockets-open-ai
 
 # Enable ingress if not already enabled
 echo "🌐 Setting up ingress..."

@@ -1,5 +1,9 @@
 import * as React from "react";
-import { getBackendSocket, initBackendSocket, leaveBackendGroup } from "@/lib/socket-backend";
+import {
+  getBackendSocket,
+  initBackendSocket,
+  leaveBackendGroup,
+} from "@/lib/socket-backend";
 
 import { JokesCard } from "@/components/jokes-card";
 import { ChatCard } from "@/components/chat-card";
@@ -34,30 +38,36 @@ export function MainCard({ userId }: MainCardProps) {
   React.useEffect(() => {
     if (!user) return;
 
-    const socket = getBackendSocket() || initBackendSocket(userId, "", () => {
-      console.log("[SOCKET] Connected to backend");
-    });
+    const socket =
+      getBackendSocket() ||
+      initBackendSocket(userId, "", () => {
+        console.log("[SOCKET] Connected to backend");
+      });
 
     // Handle group updates (e.g., new last message)
-    const groupUpdateHandler = (data: { groupId: string; lastMessage?: any; group?: Group }) => {
+    const groupUpdateHandler = (data: {
+      groupId: string;
+      lastMessage?: any;
+      group?: Group;
+    }) => {
       console.log("[SOCKET] Group update received:", data);
-      console.log("[GROUP] Group being updated: ", groups[0])
+      console.log("[GROUP] Group being updated: ", groups[0]);
 
-      setGroups(prevGroups => 
-        prevGroups.map(group => {
+      setGroups((prevGroups) =>
+        prevGroups.map((group) => {
           if (group._id === data.groupId) {
             console.log("[SOCKET] Updating group:", group);
-            
+
             // Full group update
             if (data.group) {
-              return data.group
+              return data.group;
             }
 
             // Only last message update
             if (data.lastMessage) {
               return {
                 ...group,
-                lastMessage: data.lastMessage
+                lastMessage: data.lastMessage,
               };
             }
           }
@@ -84,7 +94,7 @@ export function MainCard({ userId }: MainCardProps) {
     if (!socket) return;
 
     // Join new group rooms
-    groups.forEach(group => {
+    groups.forEach((group) => {
       console.log("[SOCKET] Joining new group room:", group._id);
       socket.emit("joinGroup", group._id);
     });
@@ -131,6 +141,16 @@ export function MainCard({ userId }: MainCardProps) {
 
   // Function to update group's lastMessage
   const updateGroupLastMessage = (message: Message) => {
+    // check if message already exists on current group
+    if (
+      selectedGroup &&
+      selectedGroup.lastMessage?.message === message.message
+    ) {
+      console.log(
+        "[SOCKET] Message already exists in selected group, skipping update."
+      );
+      return;
+    }
     // First update the groups list with the new message
     setGroups((prevGroups) =>
       prevGroups.map((g) =>
@@ -154,7 +174,7 @@ export function MainCard({ userId }: MainCardProps) {
     if (selectedGroup?._id === message.groupId) {
       setSelectedGroup((prev) => {
         if (!prev) return null;
-        
+
         return {
           ...prev,
           lastMessage: {
@@ -177,10 +197,10 @@ export function MainCard({ userId }: MainCardProps) {
       console.log("[SOCKET] Received addedToGroup event:", newGroup);
       setGroups((prev) => {
         // Check if group already exists
-        const exists = prev.some(g => g._id === newGroup._id);
+        const exists = prev.some((g) => g._id === newGroup._id);
         if (exists) {
           // Update existing group
-          return prev.map(g => g._id === newGroup._id ? newGroup : g);
+          return prev.map((g) => (g._id === newGroup._id ? newGroup : g));
         } else {
           // Add new group
           return [...prev, newGroup];

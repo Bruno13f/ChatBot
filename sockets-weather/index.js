@@ -31,7 +31,7 @@ const verifyConfig = () => {
   if (!CONFIG.backendUri) {
     throw new Error("BACKEND_URI is not set");
   }
-  if (!CONFIG.nodegeocoder_api_key) {
+  if (!CONFIG.geocoderOptions.apiKey) {
     throw new Error("NODEGEOCODER_API_KEY is not set");
   }
   if (!CONFIG.command) {

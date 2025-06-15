@@ -1,7 +1,6 @@
 import { io, Socket } from "socket.io-client";
-import { Message } from "@/models/message";
 
-let socket: Socket | null = null;
+let socketInstance: Socket | null = null;
 
 export const initBackendSocket = (
   userId: string,
@@ -19,76 +18,35 @@ export const initBackendSocket = (
       console.log("Connected to backend socket server");
       socketInstance?.emit("identify", userId);
       if (groupId) {
-        socket?.emit("joinGroup", groupId);
+        socketInstance?.emit("joinGroup", groupId);
       }
-      onConnect();
     });
 
-    socket.on("disconnect", () => {
-      console.log("[SOCKET] Disconnected from backend");
+    socketInstance.on("disconnect", () => {
+      console.log("Disconnected from backend socket server");
     });
 
-    socket.on("error", (error) => {
-      console.error("[SOCKET] Error:", error);
+    socketInstance.on("connect_error", (err) => {
+      console.error("Backend socket connection error:", err);
     });
-  } else if (groupId) {
-    // If socket exists but we need to join a new group
-    socket.emit("joinGroup", groupId);
+  } else {
+    // If already connected, just join the new group
+    socketInstance.emit("joinGroup", groupId);
   }
 
-  return socket;
-}
+  socketInstance.off("newMessage");
+  socketInstance.on("newMessage", (message) => {
+    console.log("newMessage (backend): ", message);
+    onNewMessage(message);
+  });
 
-export function getBackendSocket(): Socket | null {
-  return socket;
-}
-
-export function disconnectSocket() {
-  if (socket) {
-    socket.disconnect();
-    socket = null;
-  }
-}
-
-export function leaveBackendGroup(groupId: string) {
-  if (socket) {
-    socket.emit("leaveGroup", groupId);
-  }
-}
-
-// New function to join multiple groups at once
-export const joinMultipleGroups = (groupIds: string[]) => {
-  if (socket) {
-    groupIds.forEach(groupId => {
-      socket?.emit("joinGroup", groupId);
-    });
-  }
+  return socketInstance;
 };
 
-// New function to leave multiple groups at once
-export const leaveMultipleGroups = (groupIds: string[]) => {
-  if (socket) {
-    groupIds.forEach(groupId => {
-      socket?.emit("leaveGroup", groupId);
-    });
-  }
-};
+export const getBackendSocket = (): Socket | null => socketInstance;
 
-// New function to update socket instance with new user ID
-export const updateSocketUserId = (newUserId: string) => {
-  if (socket) {
-    socket.emit("identify", newUserId);
-  }
-};
-
-// New function to check socket connection status
-export const isSocketConnected = (): boolean => {
-  return socket?.connected || false;
-};
-
-// New function to reconnect socket if disconnected
-export const reconnectSocket = () => {
-  if (socket && !socket.connected) {
-    socket.connect();
+export const leaveBackendGroup = (groupId: string) => {
+  if (socketInstance) {
+    socketInstance.emit("leaveGroup", groupId);
   }
 };
