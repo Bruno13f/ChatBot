@@ -1,3 +1,5 @@
+minikube start
+
 minikube image build -t projeto-cn-frontend:latest ./frontend
 minikube image build -t projeto-cn-backend:latest ./backend
 minikube image build -t projeto-cn-sockets-middleware:latest ./middleware
@@ -5,7 +7,6 @@ minikube image build -t projeto-cn-sockets-weather:latest ./sockets-weather
 minikube image build -t projeto-cn-sockets-jokes:latest ./sockets-jokes
 minikube image build -t projeto-cn-sockets-open-ai:latest ./sockets-open-ai
 
-kubectl apply -f secrets.yaml
 kubectl apply -f configmap.yaml
 
 kubectl apply -f frontend/frontend-service.yaml
@@ -24,3 +25,5 @@ kubectl apply -f sockets-open-ai/sockets-open-ai-deployment.yaml
 
 minikube addons enable ingress
 kubectl apply -f ingress.yaml
+
+minikube tunnel

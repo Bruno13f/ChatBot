@@ -2,16 +2,25 @@ require("dotenv").config();
 const { io } = require("socket.io-client");
 const NodeGeocoder = require("node-geocoder");
 
+const backendPort = process.env.BACKEND_PORT || "9000";
+const backendUrl = process.env.BACKEND_URI.startsWith("/")
+  ? `http://backend:${backendPort}${process.env.BACKEND_URI}`
+  : process.env.BACKEND_URI;
+
+const middlewarePort = process.env.SOCKET_MIDDLEWARE_PORT || "8000";
+const middlewareUri = process.env.SOCKET_MIDDLEWARE_URI.startsWith("/")
+  ? `http://sockets-middleware:${middlewarePort}`
+  : process.env.SOCKET_MIDDLEWARE_URI;
+
 // Configuration
 const CONFIG = {
-  middlewareUri: process.env.SOCKET_MIDDLEWARE_URI || "http://localhost:8000",
-  backendUri: process.env.BACKEND_URI || "http://localhost:8000",
-  nodegeocoder_api_key: process.env.NODEGEOCODER_API_KEY,
+  middlewareUri: middlewareUri,
+  backendUri: backendUrl,
   command: "!weather",
   validDays: [1, 3, 7, 14, 16],
   geocoderOptions: {
     provider: "opencage",
-    apiKey: process.env.nodegeocoder_api_key,
+    apiKey: process.env.NODEGEOCODER_API_KEY,
   },
 };
 
@@ -51,7 +60,10 @@ const commandHelp = {
 };
 
 // Initialize socket connection
-const socket = io(CONFIG.middlewareUri);
+const socket = io(CONFIG.middlewareUri, {
+  path: "/sockets-middleware/socket.io",
+  reconnectionDelayMax: 10000,
+});
 
 // Socket event handlers
 const setupSocketHandlers = () => {
@@ -67,6 +79,10 @@ const setupSocketHandlers = () => {
 
   socket.on("disconnect", () => {
     console.log("Disconnected from middleware");
+  });
+
+  socket.on("connect_error", (error) => {
+    console.log("Connection failed, retrying...", error.message);
   });
 
   socket.on("process_command", handleCommand);

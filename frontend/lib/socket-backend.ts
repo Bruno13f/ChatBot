@@ -3,13 +3,21 @@ import { Message } from "@/models/message";
 
 let socket: Socket | null = null;
 
-export function initBackendSocket(userId: string, groupId: string, onConnect: () => void): Socket {
-  if (!socket) {
-    socket = io(process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:9000");
-    
-    socket.on("connect", () => {
-      console.log("[SOCKET] Connected to backend");
-      socket?.emit("identify", userId);
+export const initBackendSocket = (
+  userId: string,
+  groupId: string,
+  onNewMessage: (message: any) => void
+): Socket => {
+  if (!socketInstance) {
+    const SOCKET_URL = process.env.NEXT_PUBLIC_BACKEND_SOCKET_URI || "/";
+    console.log("Connecting to backend socket server at:", SOCKET_URL);
+    socketInstance = io(SOCKET_URL, {
+      reconnectionDelayMax: 10000,
+    });
+
+    socketInstance.on("connect", () => {
+      console.log("Connected to backend socket server");
+      socketInstance?.emit("identify", userId);
       if (groupId) {
         socket?.emit("joinGroup", groupId);
       }

@@ -90,7 +90,7 @@ app.use(express.static("public"));
 
 connectDB();
 
-app.get("/", (req, res) => {
+app.get("/api/", (req, res) => {
   res.send("API is up 🚀");
 });
 
