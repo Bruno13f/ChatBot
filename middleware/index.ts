@@ -24,7 +24,7 @@ const httpServer = createServer();
 const io = new Server(httpServer, {
   path: "/sockets-middleware/socket.io",
   cors: {
-    origin: ["*"],
+    origin: ["*", "http://localhost:3000"],
     methods: ["GET", "POST"],
     credentials: true,
   },

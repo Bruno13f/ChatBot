@@ -10,14 +10,21 @@ export const initMiddlewareSocket = (
     const SOCKET_URL =
       process.env.NEXT_PUBLIC_SOCKET_MIDDLEWARE_URI || "http://localhost:8000";
 
+    const isProxyPath = SOCKET_URL === "/sockets-middleware";
+
     console.log("Connecting to middleware socket server at:", SOCKET_URL);
     // Connecting to middleware socket server at: /sockets-middleware
     console.log("Socket path:", SOCKET_URL + "/socket.io");
 
-    socketInstance = io("/", {
-      path: SOCKET_URL + "/socket.io",
-      reconnectionDelayMax: 10000,
-    });
+    socketInstance = isProxyPath
+      ? io("/", {
+          path: SOCKET_URL + "/socket.io",
+          reconnectionDelayMax: 10000,
+        })
+      : io("http://localhost:8000", {
+        path: "/sockets-middleware/socket.io",
+        reconnectionDelayMax: 10000,
+      });
 
     socketInstance.on("connect", () => {
       console.log("Connected to middleware socket server");
