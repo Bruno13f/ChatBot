@@ -57,6 +57,17 @@ fi
 echo "⚙️  Applying ConfigMap..."
 kubectl apply -f configmap.yaml
 
+# Install Keel if not already installed
+echo "🎯 Setting up Keel for automated deployments..."
+if ! kubectl get namespace keel > /dev/null 2>&1; then
+  echo "📦 Installing Keel..."
+  kubectl apply -f keel/keel-install.yaml
+  echo "⏳ Waiting for Keel to be ready..."
+  kubectl wait --for=condition=ready pod -l app=keel -n keel --timeout=120s
+else
+  echo "✅ Keel already installed"
+fi
+
 # Apply MongoDB storage and database
 echo "🗄️  Deploying MongoDB..."
 kubectl apply -f mongodb/mongodb-pvc.yaml
