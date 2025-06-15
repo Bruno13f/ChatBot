@@ -4,6 +4,9 @@ metadata:
   annotations:
     kompose.cmd: kompose --file docker-compose.yml convert
     kompose.version: 1.36.0 (HEAD)
+    keel.sh/policy: "force"
+    keel.sh/trigger: "poll"
+    keel.sh/pollSchedule: "@every 30s"
   labels:
     io.kompose.service: sockets-middleware
   name: sockets-middleware
