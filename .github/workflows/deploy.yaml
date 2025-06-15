@@ -41,7 +41,7 @@ jobs:
         context: ./frontend
         platforms: linux/amd64
         push: true
-        tags: docker.io/${{ env.DOCKER_HUB_USERNAME }}/projeto-cn-frontend:${{ github.sha }}
+        tags: docker.io/${{ secrets.DOCKER_HUB_USERNAME }}/projeto-cn-frontend:${{ github.sha }}
 
     - name: Build & push backend
       uses: docker/build-push-action@v5
@@ -49,7 +49,7 @@ jobs:
         context: ./backend
         platforms: linux/amd64
         push: true
-        tags: docker.io/${{ env.DOCKER_HUB_USERNAME }}/projeto-cn-backend:${{ github.sha }}
+        tags: docker.io/${{ secrets.DOCKER_HUB_USERNAME }}/projeto-cn-backend:${{ github.sha }}
 
     - name: Build & push sockets-middleware
       uses: docker/build-push-action@v5
@@ -57,7 +57,7 @@ jobs:
         context: ./middleware
         platforms: linux/amd64
         push: true
-        tags: docker.io/${{ env.DOCKER_HUB_USERNAME }}/projeto-cn-sockets-middleware:${{ github.sha }}
+        tags: docker.io/${{ secrets.DOCKER_HUB_USERNAME }}/projeto-cn-sockets-middleware:${{ github.sha }}
 
     - name: Build & push sockets-weather
       uses: docker/build-push-action@v5
@@ -65,7 +65,7 @@ jobs:
         context: ./sockets-weather
         platforms: linux/amd64
         push: true
-        tags: docker.io/${{ env.DOCKER_HUB_USERNAME }}/projeto-cn-sockets-weather:${{ github.sha }}
+        tags: docker.io/${{ secrets.DOCKER_HUB_USERNAME }}/projeto-cn-sockets-weather:${{ github.sha }}
 
     - name: Build & push sockets-jokes
       uses: docker/build-push-action@v5
@@ -73,7 +73,7 @@ jobs:
         context: ./sockets-jokes
         platforms: linux/amd64
         push: true
-        tags: docker.io/${{ env.DOCKER_HUB_USERNAME }}/projeto-cn-sockets-jokes:${{ github.sha }}
+        tags: docker.io/${{ secrets.DOCKER_HUB_USERNAME }}/projeto-cn-sockets-jokes:${{ github.sha }}
 
     - name: Build & push sockets-open-ai
       uses: docker/build-push-action@v5
@@ -81,7 +81,7 @@ jobs:
         context: ./sockets-open-ai
         platforms: linux/amd64
         push: true
-        tags: docker.io/${{ env.DOCKER_HUB_USERNAME }}/projeto-cn-sockets-open-ai:${{ github.sha }}
+        tags: docker.io/${{ secrets.DOCKER_HUB_USERNAME }}/projeto-cn-sockets-open-ai:${{ github.sha }}
 
     - name: Build & push backup-cron
       uses: docker/build-push-action@v5
@@ -89,4 +89,4 @@ jobs:
         context: ./scripts
         platforms: linux/amd64
         push: true
-        tags: docker.io/${{ env.DOCKER_HUB_USERNAME }}/projeto-cn-backup-cron:${{ github.sha }}
+        tags: docker.io/${{ secrets.DOCKER_HUB_USERNAME }}/projeto-cn-backup-cron:${{ github.sha }}
