@@ -142,15 +142,18 @@ export function MainCard({ userId }: MainCardProps) {
   // Function to update group's lastMessage
   const updateGroupLastMessage = (message: Message) => {
     // check if message already exists on current group
+    console.log("new message received:", message);
     if (
       selectedGroup &&
-      selectedGroup.lastMessage?.message === message.message
+      selectedGroup.lastMessage?.sender.name === message.sender.name &&
+      message.sender.name.toLowerCase() === "system"
     ) {
       console.log(
         "[SOCKET] Message already exists in selected group, skipping update."
       );
       return;
     }
+
     // First update the groups list with the new message
     setGroups((prevGroups) =>
       prevGroups.map((g) =>

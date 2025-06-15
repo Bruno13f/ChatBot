@@ -11,9 +11,26 @@ RUN pnpm install --frozen-lockfile
 
 COPY . .
 
-# Accept env file as build ARG
-ARG ENV_FILE=.env.local
-COPY ${ENV_FILE} .env
+# Accept build arguments from docker-compose
+ARG BACKEND_URI
+ARG SOCKET_MIDDLEWARE_URI
+ARG BACKEND_SOCKET_URI
+
+# Create a clean .env file with ONLY the provided arguments
+RUN rm -f .env .env.local .env.production .env.production.local && \
+    echo "# Generated environment file" > .env && \
+    if [ ! -z "$BACKEND_URI" ]; then \
+      echo "NEXT_PUBLIC_BACKEND_URI=${BACKEND_URI}" >> .env; \
+    fi && \
+    if [ ! -z "$SOCKET_MIDDLEWARE_URI" ]; then \
+      echo "NEXT_PUBLIC_SOCKET_MIDDLEWARE_URI=${SOCKET_MIDDLEWARE_URI}" >> .env; \
+    fi && \
+    if [ ! -z "$BACKEND_SOCKET_URI" ]; then \
+      echo "NEXT_PUBLIC_BACKEND_SOCKET_URI=${BACKEND_SOCKET_URI}" >> .env; \
+    fi
+
+# Show final env for debugging
+RUN echo "Clean .env contents:" && cat .env
 
 RUN pnpm build
 
