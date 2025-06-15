@@ -2,7 +2,18 @@
 
 set -e  # Exit on any error
 
-echo "🚀 Starting projeto-cn deployment..."
+# Parse command line arguments
+IMAGE_TAG=${1:-latest}
+BUILD_IMAGES=${2:-true}
+SERVICES_TO_UPDATE=${3:-"all"}
+
+echo "🚀 Starting projeto-cn local deployment with tag: ${IMAGE_TAG}..."
+
+# Check if Docker is available through minikube
+if ! command -v minikube &> /dev/null; then
+  echo "❌ Minikube not found in PATH"
+  exit 1
+fi
 
 # Check if minikube is running, start if not
 if ! minikube status > /dev/null 2>&1; then
@@ -13,18 +24,55 @@ else
 fi
 
 # Build all Docker images
-echo "🏗️  Building Docker images..."
-minikube image build -t projeto-cn-frontend:latest ./frontend
-minikube image build -t projeto-cn-backend:latest ./backend
-minikube image build -t projeto-cn-sockets-middleware:latest ./middleware
-minikube image build -t projeto-cn-sockets-weather:latest ./sockets-weather
-minikube image build -t projeto-cn-sockets-jokes:latest ./sockets-jokes
-minikube image build -t projeto-cn-sockets-open-ai:latest ./sockets-open-ai
-minikube image build -t projeto-cn-backup-cron:latest ./scripts
+if [[ "$BUILD_IMAGES" != "skip-build" ]]; then
+  echo "🏗️  Building Docker images in parallel..."
+  echo "📦 Images to be built:"
+  echo "   - projeto-cn-frontend:${IMAGE_TAG}"
+  echo "   - projeto-cn-backend:${IMAGE_TAG}"
+  echo "   - projeto-cn-sockets-middleware:${IMAGE_TAG}"
+  echo "   - projeto-cn-sockets-weather:${IMAGE_TAG}"
+  echo "   - projeto-cn-sockets-jokes:${IMAGE_TAG}"
+  echo "   - projeto-cn-sockets-open-ai:${IMAGE_TAG}"
+  echo "   - projeto-cn-backup-cron:${IMAGE_TAG}"
+  echo ""
+  
+  # Build all images in parallel
+  minikube image build -t projeto-cn-frontend:${IMAGE_TAG} ./frontend &
+  minikube image build -t projeto-cn-backend:${IMAGE_TAG} ./backend &
+  minikube image build -t projeto-cn-sockets-middleware:${IMAGE_TAG} ./middleware &
+  minikube image build -t projeto-cn-sockets-weather:${IMAGE_TAG} ./sockets-weather &
+  minikube image build -t projeto-cn-sockets-jokes:${IMAGE_TAG} ./sockets-jokes &
+  minikube image build -t projeto-cn-sockets-open-ai:${IMAGE_TAG} ./sockets-open-ai &
+  minikube image build -t projeto-cn-backup-cron:${IMAGE_TAG} ./scripts &
+  
+  echo "⏳ Waiting for all builds to complete..."
+  wait
+  
+  echo "✅ All local images built successfully!"
+else
+  echo "⏭️  Skipping image build, using existing images with tag: ${IMAGE_TAG}"
+fi
 
 # Apply ConfigMap
 echo "⚙️  Applying ConfigMap..."
 kubectl apply -f configmap.yaml
+
+# Apply MongoDB storage and database
+echo "🗄️  Deploying MongoDB..."
+kubectl apply -f mongodb/mongodb-pvc.yaml
+kubectl apply -f mongodb/mongodb-service.yaml
+kubectl apply -f mongodb/mongodb-deployment.yaml
+
+# Wait for MongoDB to be ready
+echo "⏳ Waiting for MongoDB to be ready..."
+if ! kubectl wait --for=condition=ready pod -l app=mongodb --timeout=300s; then
+  echo "❌ MongoDB failed to become ready in time"
+  echo "📋 Checking MongoDB pod status..."
+  kubectl get pods -l app=mongodb
+  kubectl describe pods -l app=mongodb
+  exit 1
+fi
+echo "✅ MongoDB is ready!"
 
 # Apply all services
 echo "🔗 Deploying services..."
@@ -48,14 +96,36 @@ kubectl apply -f sockets-open-ai/sockets-open-ai-deployment.yaml
 echo "⏰ Deploying backup CronJob..."
 kubectl apply -f scripts/backup-cronjob.yaml
 
-# Force rolling restart of all deployments to use new images
-echo "🔄 Rolling out updates..."
-kubectl rollout restart deployment/frontend
-kubectl rollout restart deployment/backend
-kubectl rollout restart deployment/sockets-middleware
-kubectl rollout restart deployment/sockets-jokes
-kubectl rollout restart deployment/sockets-weather
-kubectl rollout restart deployment/sockets-open-ai
+# Function to update specific deployment with local images
+update_deployment() {
+  local service=$1
+  local local_image_name="projeto-cn-${service}:${IMAGE_TAG}"
+  
+  echo "🔄 Updating ${service} deployment with local image ${local_image_name}..."
+  kubectl set image deployment/${service} ${service}=${local_image_name}
+  kubectl rollout status deployment/${service}
+  echo "✅ ${service} updated successfully"
+}
+
+# Update deployments with local images
+if [[ "$SERVICES_TO_UPDATE" == "all" ]]; then
+  echo "🔄 Updating all deployments with local images (tag: ${IMAGE_TAG})..."
+  update_deployment "frontend"
+  update_deployment "backend"
+  update_deployment "sockets-middleware"
+  update_deployment "sockets-jokes"
+  update_deployment "sockets-weather"
+  update_deployment "sockets-open-ai"
+else
+  echo "🔄 Updating specific services: ${SERVICES_TO_UPDATE} with local images (tag: ${IMAGE_TAG})..."
+  for service in ${(s:,:)SERVICES_TO_UPDATE}; do
+    update_deployment "$service"
+  done
+fi
+
+# Update backup CronJob separately
+echo "⏰ Updating backup CronJob with local image..."
+kubectl patch cronjob backup-cronjob -p "{\"spec\":{\"jobTemplate\":{\"spec\":{\"template\":{\"spec\":{\"containers\":[{\"name\":\"backup-cron\",\"image\":\"projeto-cn-backup-cron:${IMAGE_TAG}\"}]}}}}}}"
 
 
 # Enable ingress if not already enabled
@@ -81,7 +151,14 @@ fi
 echo "🔧 Applying ingress configuration..."
 kubectl apply -f ingress.yaml
 
-echo "✅ Deployment complete!"
+echo "✅ Local deployment complete with tag: ${IMAGE_TAG}!"
+echo ""
+echo "📋 Usage examples:"
+echo "   ./deploy.sh                        # Deploy with latest tag"
+echo "   ./deploy.sh v1.2.0                 # Deploy with specific tag"
+echo "   ./deploy.sh v1.2.0 skip-build      # Update deployments without building"
+echo "   ./deploy.sh latest true frontend,backend  # Update only specific services"
+echo ""
 echo "🔧 Starting minikube tunnel (this will run in foreground)..."
 echo "💡 Press Ctrl+C to stop the tunnel when done"
 minikube tunnel

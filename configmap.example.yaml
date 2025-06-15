@@ -13,6 +13,7 @@ data:
   NODEGEOCODER_API_KEY: key
   MONGO_URI: uri
   MONGO_BACKUP_URI: uri
+  MONGO_LOCAL_URI: mongodb://admin:password123@mongodb:27017/chatbot?authSource=admin
 metadata:
   labels:
     io.kompose.service: backend-env

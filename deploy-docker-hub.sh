@@ -90,6 +90,16 @@ fi
 echo "⚙️  Applying ConfigMap..."
 kubectl apply -f configmap.yaml
 
+# Apply MongoDB storage and database
+echo "🗄️  Deploying MongoDB..."
+kubectl apply -f mongodb/mongodb-pvc.yaml
+kubectl apply -f mongodb/mongodb-service.yaml
+kubectl apply -f mongodb/mongodb-deployment.yaml
+
+# Wait for MongoDB to be ready
+echo "⏳ Waiting for MongoDB to be ready..."
+kubectl wait --for=condition=ready pod -l app=mongodb --timeout=300s
+
 # Apply all services
 echo "🔗 Deploying services..."
 kubectl apply -f frontend/frontend-service.yaml
