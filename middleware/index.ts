@@ -22,8 +22,9 @@ const socketRegistry: SocketRegistry = {};
 
 const httpServer = createServer();
 const io = new Server(httpServer, {
+  path: "/sockets-middleware",
   cors: {
-    origin: ["http://localhost:3000", "http://localhost:3001"],
+    origin: ["*"],
     methods: ["GET", "POST"],
     credentials: true,
   },

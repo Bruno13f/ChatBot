@@ -9,7 +9,6 @@ export const initMiddlewareSocket = (onMessage: (message: any) => void): Socket 
 
     socketInstance = io(SOCKET_URL, {
       reconnectionDelayMax: 10000,
-      withCredentials: true,
     });
 
     socketInstance.on('connect', () => {

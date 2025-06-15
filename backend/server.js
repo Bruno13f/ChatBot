@@ -10,6 +10,7 @@ const routes = require("./routes/routes");
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
+  path: "/socket-backend",
   cors: {
     origin: "*",
     methods: ["GET", "POST"],
@@ -68,7 +69,7 @@ app.use(express.static("public"));
 
 connectDB();
 
-app.get("/", (req, res) => {
+app.get("/api/", (req, res) => {
   res.send("API is up 🚀");
 });
 

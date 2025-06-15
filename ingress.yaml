@@ -1,0 +1,58 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: projeto-cn-ingress
+spec:
+  rules:
+    - host: guerra-127.0.0.1.sslip.io
+      http:
+        paths:
+          - pathType: Prefix
+            path: /
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 3000
+          - pathType: Prefix
+            path: /api
+            backend:
+              service:
+                name: backend
+                port:
+                  number: 9000
+          - pathType: Prefix
+            path: /socket-backend
+            backend:
+              service:
+                name: backend
+                port:
+                  number: 9000
+          - pathType: Prefix
+            path: /sockets-middleware
+            backend:
+              service:
+                name: sockets-middleware
+                port:
+                  number: 8000
+          - pathType: Prefix
+            path: /sockets-jokes
+            backend:
+              service:
+                name: sockets-jokes
+                port:
+                  number: 4000
+          - pathType: Prefix
+            path: /sockets-weather
+            backend:
+              service:
+                name: sockets-weather
+                port:
+                  number: 4001
+          - pathType: Prefix
+            path: /sockets-open-ai
+            backend:
+              service:
+                name: sockets-open-ai
+                port:
+                  number: 4002

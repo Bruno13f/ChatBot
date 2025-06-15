@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose --file docker-compose.yml convert
+    kompose.version: 1.36.0 (HEAD)
+  labels:
+    io.kompose.service: backend
+  name: backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: backend
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose --file docker-compose.yml convert
+        kompose.version: 1.36.0 (HEAD)
+      labels:
+        io.kompose.service: backend
+    spec:
+      containers:
+        - name: backend
+          image: projeto-cn-backend:latest
+          imagePullPolicy: Never
+          envFrom:
+            - configMapRef:
+                name: env-configmap
+          ports:
+            - containerPort: 9000
+      restartPolicy: Always

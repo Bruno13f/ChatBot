@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+data:
+  BACKEND_PORT: "9000"
+  BACKEND_URI: http://localhost:9000/api
+  FRONTEND_PORT: "3000"
+  FRONTEND_URI: http://localhost:3000
+  SOCKET_JOKES_PORT: "4000"
+  SOCKET_MIDDLEWARE_PORT: "8000"
+  SOCKET_OPENAI_PORT: "4002"
+  SOCKET_WEATHER_PORT: "4001"
+  OPENAI_API_KEY: key
+metadata:
+  labels:
+    io.kompose.service: backend-env
+  name: env-configmap

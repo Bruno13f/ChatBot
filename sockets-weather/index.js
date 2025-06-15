@@ -9,7 +9,8 @@ const CONFIG = {
   command: "!weather",
   validDays: [1, 3, 7, 14, 16],
   geocoderOptions: {
-    provider: "openstreetmap",
+    provider: "opencage",
+    apiKey: process.env.NODEGEOCODER_API_KEY,
   },
 };
 

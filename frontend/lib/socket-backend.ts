@@ -11,6 +11,7 @@ export const initBackendSocket = (
     const SOCKET_URL =
       process.env.NEXT_PUBLIC_BACKEND_SOCKET_URI || "http://localhost:9000";
     socketInstance = io(SOCKET_URL, {
+      path: "/socket-backend",
       reconnectionDelayMax: 10000,
     });
 

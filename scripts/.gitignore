@@ -1,0 +1,3 @@
+# Ignore everything inside dumps folder
+/dumps/
+/dumps/*
