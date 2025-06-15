@@ -11,8 +11,13 @@ RUN pnpm install --frozen-lockfile
 
 COPY . .
 
+# Accept env file as build ARG
+ARG ENV_FILE=.env.local
+COPY ${ENV_FILE} .env
+
 RUN pnpm build
 
+# Step 2: Runner stage
 FROM node:18-alpine AS runner
 
 ENV NODE_ENV=production
@@ -27,9 +32,8 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/next.config.ts ./
+COPY --from=builder /app/.env .env
 
-# Expose port
 EXPOSE 3000
 
-# Start the app
 CMD ["pnpm", "start"]
