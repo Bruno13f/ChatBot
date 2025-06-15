@@ -20,7 +20,7 @@ minikube image build -t projeto-cn-sockets-middleware:latest ./middleware
 minikube image build -t projeto-cn-sockets-weather:latest ./sockets-weather
 minikube image build -t projeto-cn-sockets-jokes:latest ./sockets-jokes
 minikube image build -t projeto-cn-sockets-open-ai:latest ./sockets-open-ai
-minikube image build -t lucasremigio/chatbot-backup-cron:latest ./scripts
+minikube image build -t projeto-cn-backup-cron:latest ./scripts
 
 # Apply ConfigMap
 echo "⚙️  Applying ConfigMap..."
