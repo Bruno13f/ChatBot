@@ -1,32 +1,39 @@
-import { io, Socket } from 'socket.io-client';
+import { io, Socket } from "socket.io-client";
 
 let socketInstance: Socket | null = null;
 let messageCallback: ((message: any) => void) | null = null;
 
-export const initMiddlewareSocket = (onMessage: (message: any) => void): Socket => {
+export const initMiddlewareSocket = (
+  onMessage: (message: any) => void
+): Socket => {
   if (!socketInstance) {
-    const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_MIDDLEWARE_URI || 'http://localhost:8000';
+    const SOCKET_URL =
+      process.env.NEXT_PUBLIC_SOCKET_MIDDLEWARE_URI || "http://localhost:8000";
 
-    socketInstance = io(SOCKET_URL, {
-      path: '/sockets-middleware',
+    console.log("Connecting to middleware socket server at:", SOCKET_URL);
+    // Connecting to middleware socket server at: /sockets-middleware
+    console.log("Socket path:", SOCKET_URL + "/socket.io");
+
+    socketInstance = io("/", {
+      path: SOCKET_URL + "/socket.io",
       reconnectionDelayMax: 10000,
     });
 
-    socketInstance.on('connect', () => {
-      console.log('Connected to middleware socket server');
+    socketInstance.on("connect", () => {
+      console.log("Connected to middleware socket server");
     });
 
-    socketInstance.on('disconnect', () => {
-      console.log('Disconnected from middleware socket server');
+    socketInstance.on("disconnect", () => {
+      console.log("Disconnected from middleware socket server");
     });
 
-    socketInstance.on('connect_error', (err) => {
-      console.error('Connection error:', err);
+    socketInstance.on("connect_error", (err) => {
+      console.error("Connection error:", err);
     });
 
     // Handle incoming messages
-    socketInstance.on('message', (message) => {
-      console.log('Received message from middleware:', message);
+    socketInstance.on("message", (message) => {
+      console.log("Received message from middleware:", message);
       if (onMessage) {
         onMessage(message);
       }

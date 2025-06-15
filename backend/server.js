@@ -10,7 +10,6 @@ const routes = require("./routes/routes");
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
-  path: "/socket-backend",
   cors: {
     origin: "*",
     methods: ["GET", "POST"],

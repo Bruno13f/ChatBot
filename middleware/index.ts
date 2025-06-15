@@ -22,7 +22,7 @@ const socketRegistry: SocketRegistry = {};
 
 const httpServer = createServer();
 const io = new Server(httpServer, {
-  path: "/sockets-middleware",
+  path: "/sockets-middleware/socket.io",
   cors: {
     origin: ["*"],
     methods: ["GET", "POST"],
@@ -39,37 +39,46 @@ io.on("connection", (socket) => {
   );
 
   // Handle socket registration (only for service sockets)
-  socket.on("register", (data: { commands: string[]; help: { [command: string]: CommandHelp } }) => {
-    console.log(`Service socket ${socket.id} registering commands:`, data.commands);
+  socket.on(
+    "register",
+    (data: {
+      commands: string[];
+      help: { [command: string]: CommandHelp };
+    }) => {
+      console.log(
+        `Service socket ${socket.id} registering commands:`,
+        data.commands
+      );
 
-    // Mark this socket as a service socket
-    serviceSockets.add(socket.id);
+      // Mark this socket as a service socket
+      serviceSockets.add(socket.id);
 
-    data.commands.forEach((command) => {
-      // Remove any existing registration for this command
-      if (socketRegistry[command]) {
-        console.log(
-          `Command ${command} already registered by ${socketRegistry[command].socketId}, updating to ${socket.id}`
-        );
-      }
+      data.commands.forEach((command) => {
+        // Remove any existing registration for this command
+        if (socketRegistry[command]) {
+          console.log(
+            `Command ${command} already registered by ${socketRegistry[command].socketId}, updating to ${socket.id}`
+          );
+        }
 
-      // Get help for this command or use a default
-      const help = data.help[command] || {
-        description: "No description provided",
-        usage: command,
-        examples: [`${command}`],
-      };
+        // Get help for this command or use a default
+        const help = data.help[command] || {
+          description: "No description provided",
+          usage: command,
+          examples: [`${command}`],
+        };
 
-      // Register the new command
-      socketRegistry[command] = {
-        socketId: socket.id,
-        socket: socket,
-        help,
-      };
-    });
+        // Register the new command
+        socketRegistry[command] = {
+          socketId: socket.id,
+          socket: socket,
+          help,
+        };
+      });
 
-    console.log("Current registry:", Object.keys(socketRegistry));
-  });
+      console.log("Current registry:", Object.keys(socketRegistry));
+    }
+  );
 
   socket.on("disconnect", () => {
     // Remove all registrations for this socket if it was a service socket
@@ -165,27 +174,30 @@ function generateHelpMessage(): string {
 
   // Group commands by their categories
   const categories: { [category: string]: string[] } = {};
-  
+
   // Process each registered command
   Object.entries(socketRegistry).forEach(([command, data]) => {
     // Get category or default to "Other"
     const category = data.help.category || "Other";
-    
+
     // Create category array if it doesn't exist
     if (!categories[category]) {
       categories[category] = [];
     }
-    
+
     // Format the basic command help
     let commandHelp = `- \`${data.help.usage}\` → ${data.help.description}\n\n`;
-    
+
     // Add examples if available
     if (data.help.examples && data.help.examples.length > 0) {
-      const exampleWord = data.help.examples.length > 1 ? 'Examples' : 'Example';
-      const formattedExamples = data.help.examples.map(ex => `\`${ex}\``).join(', ');
+      const exampleWord =
+        data.help.examples.length > 1 ? "Examples" : "Example";
+      const formattedExamples = data.help.examples
+        .map((ex) => `\`${ex}\``)
+        .join(", ");
       commandHelp += `  **${exampleWord}:** ${formattedExamples}\n\n`;
     }
-    
+
     // Add to the appropriate category
     categories[category].push(commandHelp);
   });
@@ -199,16 +211,16 @@ function generateHelpMessage(): string {
     if (category !== "Other") {
       const emoji = getCategoryEmoji(category);
       helpMessage += `**${category.toUpperCase()} ${emoji}**\n`;
-      
+
       // Add all commands in this category
-      commands.forEach(cmd => helpMessage += cmd);
+      commands.forEach((cmd) => (helpMessage += cmd));
     }
   });
 
   // Add the "Other" category at the end if it exists
   if (categories["Other"] && categories["Other"].length > 0) {
     helpMessage += `**OTHER ✨**\n`;
-    categories["Other"].forEach(cmd => helpMessage += cmd);
+    categories["Other"].forEach((cmd) => (helpMessage += cmd));
   }
 
   return helpMessage;
@@ -221,13 +233,13 @@ function generateHelpMessage(): string {
  */
 function getCategoryEmoji(category: string): string {
   const emojis: { [key: string]: string } = {
-    "Jokes": "🤣",
-    "Weather": "⛅", 
-    "AI": "🧠",
-    "General": "📋",
-    "Other": "✨"
+    Jokes: "🤣",
+    Weather: "⛅",
+    AI: "🧠",
+    General: "📋",
+    Other: "✨",
   };
-  
+
   return emojis[category] || "✨";
 }
 
@@ -237,6 +249,11 @@ const saveMessageToAPI = async (
   token: string
 ) => {
   const backendUrl = process.env.BACKEND_URI || "http://localhost:8000";
+
+  console.log(
+    `Saving message to API at ${backendUrl}/groups/${groupId}/messages`
+  );
+
   const res = await fetch(`${backendUrl}/groups/${groupId}/messages`, {
     method: "POST",
     headers: {

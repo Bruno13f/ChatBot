@@ -8,10 +8,9 @@ export const initBackendSocket = (
   onNewMessage: (message: any) => void
 ): Socket => {
   if (!socketInstance) {
-    const SOCKET_URL =
-      process.env.NEXT_PUBLIC_BACKEND_SOCKET_URI || "http://localhost:9000";
+    const SOCKET_URL = process.env.NEXT_PUBLIC_BACKEND_SOCKET_URI || "/";
+    console.log("Connecting to backend socket server at:", SOCKET_URL);
     socketInstance = io(SOCKET_URL, {
-      path: "/socket-backend",
       reconnectionDelayMax: 10000,
     });
 
