@@ -12,9 +12,9 @@ interface CommandHelp {
 // Registry to store socket connections and their commands
 interface SocketRegistry {
   [command: string]: {
-    socketId: string;
-    socket: Socket;
+    sockets: Map<string, Socket>; // Map of socketId -> Socket
     help: CommandHelp;
+    roundRobinIndex: number; // Track which socket to use next
   };
 }
 
@@ -54,13 +54,6 @@ io.on("connection", (socket) => {
       serviceSockets.add(socket.id);
 
       data.commands.forEach((command) => {
-        // Remove any existing registration for this command
-        if (socketRegistry[command]) {
-          console.log(
-            `Command ${command} already registered by ${socketRegistry[command].socketId}, updating to ${socket.id}`
-          );
-        }
-
         // Get help for this command or use a default
         const help = data.help[command] || {
           description: "No description provided",
@@ -68,25 +61,59 @@ io.on("connection", (socket) => {
           examples: [`${command}`],
         };
 
-        // Register the new command
-        socketRegistry[command] = {
-          socketId: socket.id,
-          socket: socket,
-          help,
-        };
+        // Initialize command entry if it doesn't exist
+        if (!socketRegistry[command]) {
+          socketRegistry[command] = {
+            sockets: new Map(),
+            help,
+            roundRobinIndex: 0, // Initialize round-robin counter
+          };
+          console.log(
+            `Command ${command} registered for the first time by ${socket.id}`
+          );
+        } else {
+          console.log(
+            `Command ${command} already exists, adding socket ${socket.id} to the list`
+          );
+          // Update help if needed (in case of different versions)
+          socketRegistry[command].help = help;
+        }
+
+        // Add this socket to the command's socket list
+        socketRegistry[command].sockets.set(socket.id, socket);
       });
 
-      console.log("Current registry:", Object.keys(socketRegistry));
+      console.log(
+        "Current registry:",
+        Object.keys(socketRegistry).map(
+          (cmd) => `${cmd}: ${socketRegistry[cmd]?.sockets.size || 0} socket(s)`
+        )
+      );
     }
   );
 
   socket.on("disconnect", () => {
-    // Remove all registrations for this socket if it was a service socket
+    // Remove this socket from all command registrations if it was a service socket
     if (serviceSockets.has(socket.id)) {
       Object.entries(socketRegistry).forEach(([command, data]) => {
-        if (data.socketId === socket.id) {
-          delete socketRegistry[command];
-          console.log(`Removed registration for command ${command}`);
+        // Remove this specific socket from the command
+        if (data.sockets.has(socket.id)) {
+          data.sockets.delete(socket.id);
+          console.log(`Removed socket ${socket.id} from command ${command}`);
+
+          // If no sockets remain for this command, remove the command entirely
+          if (data.sockets.size === 0) {
+            delete socketRegistry[command];
+            console.log(`Removed command ${command} - no sockets remaining`);
+          } else {
+            // Reset round-robin index if it's now out of bounds
+            if (data.roundRobinIndex >= data.sockets.size) {
+              data.roundRobinIndex = 0;
+            }
+            console.log(
+              `Command ${command} still has ${data.sockets.size} socket(s) remaining`
+            );
+          }
         }
       });
       serviceSockets.delete(socket.id);
@@ -120,12 +147,42 @@ io.on("connection", (socket) => {
         isOpenAI: false,
       });
     } else if (socketRegistry[command]) {
-      console.log(
-        `Routing command ${command} to service socket ${socketRegistry[command].socketId}`
+      // Get all available sockets for this command
+      const availableSockets = Array.from(
+        socketRegistry[command].sockets.values()
       );
 
-      // Forward the message to the appropriate service socket
-      socketRegistry[command].socket.emit("process_command", {
+      if (availableSockets.length === 0) {
+        // This shouldn't happen, but clean up if it does
+        delete socketRegistry[command];
+        const errorMessage = `🤖 **Service Unavailable:**\n\nCommand \`${command}\` is temporarily unavailable. Please try again later.`;
+        await saveMessageToAPI(errorMessage, message.groupId, message.token);
+        socket.emit("message", {
+          text: errorMessage,
+          isJoke: false,
+          isWeather: false,
+          isOpenAI: false,
+        });
+        return;
+      }
+
+      // Round-robin socket selection
+      const currentIndex = socketRegistry[command].roundRobinIndex;
+      const targetSocket =
+        availableSockets[currentIndex % availableSockets.length]!;
+
+      // Update round-robin index for next request
+      socketRegistry[command].roundRobinIndex =
+        (currentIndex + 1) % availableSockets.length;
+
+      console.log(
+        `Routing command ${command} to socket ${currentIndex + 1}/${
+          availableSockets.length
+        } (round-robin)`
+      );
+
+      // Forward the message to the selected service socket
+      targetSocket.emit("process_command", {
         command,
         args,
         originalMessage: {
