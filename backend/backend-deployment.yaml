@@ -25,7 +25,7 @@ spec:
     spec:
       containers:
         - name: backend
-          image: docker.io/lucasestgipleiria/projeto-cn-backend:latest
+          image: docker.io/projetocn/projeto-cn-backend:production
           imagePullPolicy: Always
           envFrom:
             - configMapRef:
@@ -33,3 +33,4 @@ spec:
           ports:
             - containerPort: 9000
       restartPolicy: Always
+

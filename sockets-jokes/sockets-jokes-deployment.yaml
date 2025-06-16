@@ -25,7 +25,7 @@ spec:
     spec:
       containers:
         - name: sockets-jokes
-          image: docker.io/lucasestgipleiria/projeto-cn-sockets-jokes:latest
+          image: docker.io/projetocn/projeto-cn-sockets-jokes:production
           imagePullPolicy: Always
           envFrom:
             - configMapRef:

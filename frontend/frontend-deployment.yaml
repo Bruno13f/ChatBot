@@ -25,7 +25,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: docker.io/lucasestgipleiria/projeto-cn-frontend:latest
+          image: docker.io/projetocn/projeto-cn-frontend:production
           imagePullPolicy: Always
           envFrom:
             - configMapRef:

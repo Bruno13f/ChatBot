@@ -13,8 +13,8 @@ metadata:
 
 spec:
   rules:
-    # - host: chatbotg6-172.22.21.101.sslip.io
-    - host: chatbot-127.0.0.1.sslip.io
+    - host: chatbotg6-172.22.21.101.sslip.io
+    # - host: chatbot-127.0.0.1.sslip.io
       http:
         paths:
           - pathType: ImplementationSpecific

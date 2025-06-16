@@ -25,7 +25,7 @@ spec:
     spec:
       containers:
         - name: sockets-weather
-          image: docker.io/lucasestgipleiria/projeto-cn-sockets-weather:latest
+          image: docker.io/projetocn/projeto-cn-sockets-weather:production
           imagePullPolicy: Always
           envFrom:
             - configMapRef:

@@ -25,7 +25,7 @@ spec:
     spec:
       containers:
         - name: sockets-middleware
-          image: docker.io/lucasestgipleiria/projeto-cn-sockets-middleware:latest
+          image: docker.io/projetocn/projeto-cn-sockets-middleware:production
           imagePullPolicy: Always
           envFrom:
             - configMapRef:
