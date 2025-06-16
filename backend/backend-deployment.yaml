@@ -4,10 +4,9 @@ metadata:
   annotations:
     kompose.cmd: kompose --file docker-compose.yml convert
     kompose.version: 1.36.0 (HEAD)
-    keel.sh/policy: "all"
-    keel.sh/trigger: "poll"
-    keel.sh/pollSchedule: "@every 30s"
-    keel.sh/match-tag: "true"
+    keel.sh/policy: force          
+    keel.sh/trigger: poll           
+    keel.sh/pollSchedule: "@every 1m"
   labels:
     io.kompose.service: backend
   name: backend
@@ -27,7 +26,7 @@ spec:
       containers:
         - name: backend
           image: docker.io/lucasestgipleiria/projeto-cn-backend:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           envFrom:
             - configMapRef:
                 name: env-configmap

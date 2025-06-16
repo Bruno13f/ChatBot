@@ -1,4 +1,4 @@
-#!/bin/zsh
+#!/bin/sh
 
 set -e  # Exit on any error
 
@@ -61,6 +61,8 @@ if [[ "$BUILD_IMAGES" != "skip-build" ]]; then
 
   echo "⏳ Waiting for all builds to complete..."
   wait
+
+  sleep 20
 
   echo "✅ All images built and pushed to Docker Hub successfully!"
   echo "🐳 Images available at:"
