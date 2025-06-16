@@ -35,7 +35,7 @@ const serviceSockets = new Set<string>();
 
 io.on("connection", (socket) => {
   console.log(
-    `Client connected: ${socket.id}. Total clients: ${io.engine.clientsCount}`
+    `[MIDDLEWARE] Client connected: ${socket.id}. Total clients: ${io.engine.clientsCount}`
   );
 
   // Handle socket registration (only for service sockets)
