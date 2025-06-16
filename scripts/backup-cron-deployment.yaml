@@ -29,7 +29,7 @@ spec:
             - secretRef:
                 name: app-secrets
           image: lucasremigio/chatbot-backup-cron:latest
-          imagePullPolicy: Never
+          imagePullPolicy: Always
           name: backup-cron
           volumeMounts:
             - mountPath: /dumps
